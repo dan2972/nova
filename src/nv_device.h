@@ -14,13 +14,7 @@ namespace Nova {
         PhysicalDevice GetPhysicalDevice() const { return m_physicalDevices[m_selectedPhysicalDeviceIndex]; }
         const std::vector<PhysicalDevice> GetPhysicalDevices() const { return m_physicalDevices; }
 
-        void SelectPhysicalDevice(size_t index) {
-            if (index >= m_physicalDevices.size()) {
-                spdlog::error("Invalid physical device index: {}", index);
-                exit(-1);
-            }
-            m_selectedPhysicalDeviceIndex = index;
-        }
+        void SelectPhysicalDevice(size_t index);
 
     private:
         Instance* m_instance;

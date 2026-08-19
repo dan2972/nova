@@ -2,11 +2,11 @@
 
 #include <volk.h>
 #include <source_location>
-#include <spdlog/spdlog.h>
+#include "logger.h"
 
 static inline void CheckVk(VkResult res, const std::source_location& location = std::source_location::current()) {
     if (res == 0) return;
-    spdlog::error("Vulkan error: {} at {}:{}", static_cast<int>(res), location.file_name(), location.line());
+    Nova::LogError("Vulkan error: {} at {}:{}", static_cast<int>(res), location.file_name(), location.line());
     exit(res);
 }
 

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include "nv_helpers.h"
 #include "nv_device.h"
+#include "logger.h"
 
 namespace {
     void sGetPhysicalDevices(VkInstance instance, std::vector<Nova::PhysicalDevice>& physicalDevices)
@@ -40,14 +41,14 @@ namespace Nova {
         sSortPhysicalDevices(m_physicalDevices);
 
         if (m_physicalDevices.empty()) {
-            spdlog::error("No GPU found.");
+            LogError("No GPU found.");
             exit(-1);
         }
 
         m_selectedPhysicalDeviceIndex = 0;
         
         const PhysicalDevice& selectedDevice = m_physicalDevices[m_selectedPhysicalDeviceIndex];
-        spdlog::info("Selected GPU: {} (type: {}, VRAM: {} MB)",
+        LogInfo("Selected GPU: {} (type: {}, VRAM: {} MB)",
             selectedDevice.GetDeviceName(),
             static_cast<int>(selectedDevice.GetType()),
             selectedDevice.GetVRAMSize() / (1024 * 1024));
@@ -55,5 +56,13 @@ namespace Nova {
 
     Device::~Device()
     {
+    }
+
+    void Device::SelectPhysicalDevice(size_t index)  {
+        if (index >= m_physicalDevices.size()) {
+            LogError("Invalid physical device index: {}", index);
+            exit(-1);
+        }
+        m_selectedPhysicalDeviceIndex = index;
     }
 }
