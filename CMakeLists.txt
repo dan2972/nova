@@ -9,19 +9,28 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 
 find_package(Vulkan REQUIRED)
 find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(volk CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
+find_package(spdlog REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Vulkan::Vulkan
     GPUOpen::VulkanMemoryAllocator
+    volk::volk
     glm::glm
     slang::slang
+    spdlog::spdlog
+    glfw
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE VK_ENABLE_BETA_EXTENSIONS)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    VK_ENABLE_BETA_EXTENSIONS
+    SPDLOG_NO_EXCEPTIONS
+)
 
 function(copy_target_resources TARGET_NAME SOURCE_DIR DEST_DIR)
     add_custom_target(${TARGET_NAME}_copy_folder ALL

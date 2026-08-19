@@ -1,8 +1,12 @@
 #include <iostream>
-#include <vulkan/vulkan.h>
+#include <spdlog/spdlog.h>
+
+#include "nova.h"
 
 int main() {
-    VkInstance instance;
-    std::cout << "Hello, World!" << std::endl;
+    spdlog::set_level(spdlog::level::debug);
+
+    Nova::Instance instance;
+    Nova::Device device(&instance);
     return 0;
 }
