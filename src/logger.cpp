@@ -11,7 +11,7 @@ namespace Nova {
 
     LoggerBase& GetLogger() {
         if (!s_logger) {
-            s_logger = std::make_unique<Logger>("Nova");
+            s_logger = std::make_unique<LoggerDefault>("Nova");
         }
         return *s_logger;
     }

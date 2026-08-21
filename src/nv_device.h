@@ -11,6 +11,8 @@ namespace Nova {
         Device(Instance* instance);
         ~Device();
 
+        VkDevice GetRaw() const { return m_device; }
+
         PhysicalDevice GetPhysicalDevice() const { return m_physicalDevices[m_selectedPhysicalDeviceIndex]; }
         const std::vector<PhysicalDevice> GetPhysicalDevices() const { return m_physicalDevices; }
 

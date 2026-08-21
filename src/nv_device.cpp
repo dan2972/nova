@@ -31,6 +31,51 @@ namespace {
                 return a.GetVRAMSize() > b.GetVRAMSize();
             });
     }
+
+    bool sCreateLogicalDevice(const Nova::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, VkDevice& device)
+    {
+        const float qfPriority = 1.0f;
+        VkDeviceQueueCreateInfo queueCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+            .queueFamilyIndex = graphicsQueueFamilyIndex,
+            .queueCount = 1,
+            .pQueuePriorities = &qfPriority
+        };
+        VkPhysicalDeviceVulkan12Features vk12Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+            .descriptorIndexing = true,
+            .shaderSampledImageArrayNonUniformIndexing = true,
+            .descriptorBindingVariableDescriptorCount = true,
+            .runtimeDescriptorArray = true,
+            .bufferDeviceAddress = true
+        };
+        const VkPhysicalDeviceVulkan13Features vk13Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+            .pNext = &vk12Features,
+            .synchronization2 = true,
+            .dynamicRendering = true,
+        };
+        const VkPhysicalDeviceFeatures vk10Features{
+            .samplerAnisotropy = VK_TRUE
+        };
+
+        std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        if (PlatformDefined(Platform::MacOS)) {
+            deviceExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+        }
+
+        VkDeviceCreateInfo deviceCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = &vk13Features,
+            .queueCreateInfoCount = 1,
+            .pQueueCreateInfos = &queueCreateInfo,
+            .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
+            .ppEnabledExtensionNames = deviceExtensions.data(),
+            .pEnabledFeatures = &vk10Features
+        };
+        device = VK_NULL_HANDLE;
+        return vkCreateDevice(physicalDevice.GetRaw(), &deviceCreateInfo, nullptr, &device) == VK_SUCCESS;
+    }
 }
 
 namespace Nova {
@@ -52,6 +97,11 @@ namespace Nova {
             selectedDevice.GetDeviceName(),
             static_cast<int>(selectedDevice.GetType()),
             selectedDevice.GetVRAMSize() / (1024 * 1024));
+
+        bool success = sCreateLogicalDevice(selectedDevice, selectedDevice.GetGraphicsQueueFamilyIndex(), m_device);
+        if (!success) {
+            LogError("Failed to create logical device.");
+        }
     }
 
     Device::~Device()

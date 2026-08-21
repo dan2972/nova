@@ -2,6 +2,7 @@
 
 #include <volk.h>
 #include <string>
+#include <vector>
 
 namespace Nova {
     class PhysicalDevice {
@@ -13,7 +14,7 @@ namespace Nova {
         PhysicalDevice& operator=(PhysicalDevice&&) noexcept = default;
         ~PhysicalDevice() = default;
 
-        VkPhysicalDevice Get() const { return m_physicalDevice; }
+        VkPhysicalDevice GetRaw() const { return m_physicalDevice; }
 
         enum class GPUType : uint32_t {
             Other,
@@ -27,9 +28,13 @@ namespace Nova {
         GPUType GetType() const { return m_type; }
         std::string GetDeviceName() const { return m_deviceName; }
         size_t GetVRAMSize() const { return m_vramSize; }
+        uint32_t GetGraphicsQueueFamilyIndex() const { return m_graphicsQueueFamilyIndex; }
+        std::vector<VkQueueFamilyProperties> GetQueueFamilies() const { return m_queueFamilies; }
 
     private:
         VkPhysicalDevice m_physicalDevice;
+        std::vector<VkQueueFamilyProperties> m_queueFamilies;
+        uint32_t m_graphicsQueueFamilyIndex = 0;
         GPUType m_type;
         std::string m_deviceName;
         size_t m_vramSize;

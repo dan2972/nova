@@ -17,6 +17,17 @@ namespace Nova {
                 m_vramSize += memoryProperties.memoryHeaps[i].size;
             }
         }
+
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+        m_queueFamilies.resize(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, m_queueFamilies.data());
+        for (uint32_t i = 0; i < queueFamilyCount; i++) {
+            if (m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                m_graphicsQueueFamilyIndex = i;
+                break;
+            }
+        }
     }
 
     PhysicalDevice::GPUType PhysicalDevice::VkTypeToNovaType(VkPhysicalDeviceType vkType) const

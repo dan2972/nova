@@ -9,6 +9,8 @@ namespace Nova {
         Instance(std::string applicationName = "Nova Application");
         ~Instance();
 
+        VkInstance GetRaw() const { return m_instance; }
+
     private:
         void Init(std::string applicationName);
 

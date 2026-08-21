@@ -20,9 +20,9 @@ namespace Nova {
         virtual void Log(Level level, std::string_view message) = 0;
     };
 
-    class Logger : public LoggerBase {
+    class LoggerDefault : public LoggerBase {
     public:
-        explicit Logger(const std::string& name) {
+        explicit LoggerDefault(const std::string& name) {
             logger_ = spdlog::stdout_color_mt(name);
         }
 
