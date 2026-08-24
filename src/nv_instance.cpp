@@ -1,13 +1,26 @@
-#include <GLFW/glfw3.h>
-#include <vector>
 #include "nv_instance.h"
 #include "nv_helpers.h"
 
+#include <vector>
+#include <GLFW/glfw3.h>
+
 namespace {
     static bool sVolkLoaded = false;
+    static bool sGLFWInitialized = false;
 
     void sGetInstanceExtensions(std::vector<const char*>& extensions)
     {
+        if (!sGLFWInitialized) {
+            if (!glfwInit()) {
+                Nova::LogError("Failed to initialize GLFW");
+                exit(-1);
+            }
+            if (!glfwVulkanSupported()) {
+                Nova::LogError("GLFW: Vulkan not supported");
+                exit(-1);
+            }
+            sGLFWInitialized = true;
+        }
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
         for (uint32_t i = 0; i < glfwExtensionCount; i++) {
