@@ -79,8 +79,8 @@ namespace {
 }
 
 namespace Nova {
-    Device::Device(Instance* instance)
-        : m_instance(instance)
+    Device::Device(Instance* instance, VkSurfaceKHR surface)
+        : m_instance(instance), m_surface(surface)
     {
         sGetPhysicalDevices(m_instance->m_instance, m_physicalDevices);
         sSortPhysicalDevices(m_physicalDevices);
@@ -104,6 +104,11 @@ namespace Nova {
         }
     }
 
+    Device::Device(Instance* instance, Window* window)
+        : Device(instance, window->GetSurface())
+    {
+    }
+
     Device::~Device()
     {
     }
@@ -114,5 +119,15 @@ namespace Nova {
             exit(-1);
         }
         m_selectedPhysicalDeviceIndex = index;
+    }
+
+    const VkSurfaceCapabilitiesKHR Device::GetSurfaceCapabilities() const {
+        if (m_surface == VK_NULL_HANDLE) {
+            LogError("Surface is not set for the device.");
+            exit(-1);
+        }
+        VkSurfaceCapabilitiesKHR capabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevices[m_selectedPhysicalDeviceIndex].GetRaw(), m_surface, &capabilities);
+        return capabilities;
     }
 }
