@@ -11,6 +11,12 @@ namespace Nova {
     public:
         Window();
         Window(const Instance& instance, uint32_t width, uint32_t height, const std::string& title);
+        ~Window();
+
+        Window(const Window&) = delete;
+        Window& operator=(const Window&) = delete;
+        Window(Window&&) = delete;
+        Window& operator=(Window&&) = delete;
 
         VkSurfaceKHR GetSurface() const { return m_surface; }
         glm::ivec2 GetSize() const { return glm::ivec2(m_width, m_height); }

@@ -15,6 +15,7 @@ namespace Nova {
         void Init(std::string applicationName);
 
         VkInstance m_instance;
+        VkDebugUtilsMessengerEXT m_debugMessenger;
 
         friend class Device;
     };

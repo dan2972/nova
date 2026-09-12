@@ -1,6 +1,7 @@
 #pragma once
 
 #include <volk.h>
+#include <utility>
 #include <vector>
 
 #include "nv_device.h"
@@ -35,13 +36,61 @@ namespace Nova {
     };
 
     struct Swapchain {
-        VkSwapchainKHR swapchain;
+        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
         ImageFormat format;
         ColorSpace colorSpace;
         SwapchainPresentMode presentMode;
         VkExtent2D extent;
         std::vector<VkImage> images;
         std::vector<VkImageView> imageViews;
+
+        Swapchain() = default;
+        ~Swapchain() { Destroy(); }
+
+        Swapchain(const Swapchain&) = delete;
+        Swapchain& operator=(const Swapchain&) = delete;
+
+        Swapchain(Swapchain&& other) noexcept { *this = std::move(other); }
+
+        Swapchain& operator=(Swapchain&& other) noexcept {
+            if (this != &other) {
+                Destroy();
+                device = other.device;
+                swapchain = other.swapchain;
+                format = other.format;
+                colorSpace = other.colorSpace;
+                presentMode = other.presentMode;
+                extent = other.extent;
+                images = std::move(other.images);
+                imageViews = std::move(other.imageViews);
+                other.device = VK_NULL_HANDLE;
+                other.swapchain = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
+
+        void Destroy() {
+            if (device == VK_NULL_HANDLE) return;
+
+            for (VkImageView imageView : imageViews) {
+                if (imageView != VK_NULL_HANDLE) {
+                    vkDestroyImageView(device, imageView, nullptr);
+                }
+            }
+            imageViews.clear();
+            images.clear();
+
+            if (swapchain != VK_NULL_HANDLE) {
+                vkDestroySwapchainKHR(device, swapchain, nullptr);
+                swapchain = VK_NULL_HANDLE;
+            }
+            device = VK_NULL_HANDLE;
+        }
+
+    private:
+        VkDevice device = VK_NULL_HANDLE;
+
+        friend struct SwapchainBuilder;
     };
 
     struct SwapchainBuilder {
@@ -89,8 +138,9 @@ namespace Nova {
             return *this;
         }
 
-        const Swapchain build() {
+        Swapchain build() {
             Swapchain swapchain;
+            swapchain.device = device->GetRaw();
             swapchain.format = static_cast<ImageFormat>(createInfo.imageFormat);
             swapchain.colorSpace = static_cast<ColorSpace>(createInfo.imageColorSpace);
             swapchain.presentMode = static_cast<SwapchainPresentMode>(createInfo.presentMode);
