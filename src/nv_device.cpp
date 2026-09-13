@@ -136,19 +136,19 @@ namespace Nova {
         return capabilities;
     }
 
-    std::vector<DepthFormat> Device::GetSupportedDepthFormats() const
+    std::vector<ImageFormat> Device::GetSupportedDepthFormats() const
     {
-        std::vector<VkFormat> depthFormats = {
+        static const std::vector<VkFormat> depthFormats = {
             VK_FORMAT_D32_SFLOAT_S8_UINT,
             VK_FORMAT_D24_UNORM_S8_UINT
         };
 
-        std::vector<DepthFormat> supportedDepthFormats;
+        std::vector<ImageFormat> supportedDepthFormats;
         for (const auto& format : depthFormats) {
             VkFormatProperties2 formatProperties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
             vkGetPhysicalDeviceFormatProperties2(m_physicalDevices[m_selectedPhysicalDeviceIndex].GetRaw(), format, &formatProperties);
             if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-                supportedDepthFormats.push_back(static_cast<DepthFormat>(format));
+                supportedDepthFormats.push_back(static_cast<ImageFormat>(format));
             }
         }
         return supportedDepthFormats;

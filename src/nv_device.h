@@ -6,15 +6,9 @@
 #include "nv_instance.h"
 #include "nv_physicalDevice.h"
 #include "nv_window.h"
+#include "nv_image.h"
 
 namespace Nova {
-    enum class DepthFormat {
-        D16Unorm = VK_FORMAT_D16_UNORM,
-        D32Sfloat = VK_FORMAT_D32_SFLOAT,
-        D24UnormS8Uint = VK_FORMAT_D24_UNORM_S8_UINT,
-        D32SfloatS8Uint = VK_FORMAT_D32_SFLOAT_S8_UINT
-    };
-
     class Device {
     public:
         Device(Instance* instance, VkSurfaceKHR surface = VK_NULL_HANDLE);
@@ -37,7 +31,7 @@ namespace Nova {
 
         const VkSurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
 
-        std::vector<DepthFormat> GetSupportedDepthFormats() const;
+        std::vector<ImageFormat> GetSupportedDepthFormats() const;
     private:
         Instance* m_instance;
         std::vector<PhysicalDevice> m_physicalDevices;

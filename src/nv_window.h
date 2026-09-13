@@ -20,6 +20,8 @@ namespace Nova {
 
         VkSurfaceKHR GetSurface() const { return m_surface; }
         glm::ivec2 GetSize() const { return glm::ivec2(m_width, m_height); }
+        uint32_t GetWidth() const { return m_width; }
+        uint32_t GetHeight() const { return m_height; }
     private:
         GLFWwindow* m_window = nullptr;
         uint32_t m_width = 0;

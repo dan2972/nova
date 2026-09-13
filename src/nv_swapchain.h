@@ -6,15 +6,9 @@
 
 #include "nv_device.h"
 #include "nv_helpers.h"
+#include "nv_image.h"
 
 namespace Nova {
-    enum class ImageFormat {
-        R8G8B8A8Unorm = VK_FORMAT_R8G8B8A8_UNORM,
-        B8G8R8A8Unorm = VK_FORMAT_B8G8R8A8_UNORM,
-        R16G16B16A16Sfloat = VK_FORMAT_R16G16B16A16_SFLOAT,
-        A2B10G10R10UnormPack32 = VK_FORMAT_A2B10G10R10_UNORM_PACK32
-    };
-
     enum class ColorSpace {
         SrgbNonlinear = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
         DisplayP3Nonlinear = VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT,

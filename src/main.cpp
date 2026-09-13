@@ -2,8 +2,6 @@
 #include <spdlog/spdlog.h>
 
 #include "nova.h"
-#include "nv_window.h"
-#include "nv_swapchain.h"
 
 int main() {
     Nova::Instance instance;
@@ -15,8 +13,15 @@ int main() {
         .SetFormat(Nova::ImageFormat::B8G8R8A8Unorm)
         .SetColorSpace(Nova::ColorSpace::SrgbNonlinear)
         .SetPresentMode(Nova::SwapchainPresentMode::Fifo)
-        .SetExtent(window.GetSize().x, window.GetSize().y)
+        .SetExtent(window.GetWidth(), window.GetHeight())
         .build();
+
+    Nova::ImageBuilder imageBuilder(&device);
+    Nova::Image depthImage = imageBuilder
+        .SetFormat(device.GetSupportedDepthFormats()[0])
+        .SetExtent(window.GetWidth(), window.GetHeight())
+        .SetUsage(Nova::ImageUsage::DepthStencilAttachment)
+        .build(instance);
     
     return 0;
 }

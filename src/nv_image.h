@@ -1,0 +1,99 @@
+#pragma once
+
+#include <volk.h>
+#include "nv_allocator.h"
+
+namespace Nova {
+    class Device;
+    class Instance;
+
+    enum class ImageFormat {
+        R8G8B8A8Unorm = VK_FORMAT_R8G8B8A8_UNORM,
+        B8G8R8A8Unorm = VK_FORMAT_B8G8R8A8_UNORM,
+        R16G16B16A16Sfloat = VK_FORMAT_R16G16B16A16_SFLOAT,
+        A2B10G10R10UnormPack32 = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
+
+        R8G8B8A8Snorm = VK_FORMAT_R8G8B8A8_SNORM,
+        B8G8R8A8Snorm = VK_FORMAT_B8G8R8A8_SNORM,
+        R16G16B16A16Snorm = VK_FORMAT_R16G16B16A16_SNORM,
+
+        // Depth formats
+        D16Unorm = VK_FORMAT_D16_UNORM,
+        D32Sfloat = VK_FORMAT_D32_SFLOAT,
+        D24UnormS8Uint = VK_FORMAT_D24_UNORM_S8_UINT,
+        D32SfloatS8Uint = VK_FORMAT_D32_SFLOAT_S8_UINT
+    };
+
+    enum class ImageUsage {
+        TransferSrc = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+        TransferDst = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+        Sampled = VK_IMAGE_USAGE_SAMPLED_BIT,
+        Storage = VK_IMAGE_USAGE_STORAGE_BIT,
+        ColorAttachment = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        DepthStencilAttachment = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        TransientAttachment = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+        InputAttachment = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+    };
+
+    struct Image {
+        ImageAllocation allocation;
+        VkExtent3D extent = {1, 1, 1};
+        ImageFormat format = ImageFormat::R8G8B8A8Unorm;
+        VkImageView imageView = VK_NULL_HANDLE;
+
+        void Destroy() {
+            if (imageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(device, imageView, nullptr);
+                imageView = VK_NULL_HANDLE;
+            }
+            allocation.Destroy(device);
+        }
+
+        Image() = default;
+        ~Image() { Destroy(); }
+
+    private:
+        VkDevice device = VK_NULL_HANDLE;
+
+        friend struct ImageBuilder;
+    };
+
+    struct ImageBuilder {
+        VkImageCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = VK_FORMAT_B8G8R8A8_SRGB,
+            .mipLevels = 1,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        };
+        VkExtent3D extent = {1, 1, 1};
+        const Device* device = nullptr;
+
+        ImageBuilder(const Device* device) : device(device) {
+            createInfo.extent = {1, 1, 1};
+        }
+
+        ImageBuilder& SetFormat(ImageFormat format) {
+            createInfo.format = static_cast<VkFormat>(format);
+            return *this;
+        }
+
+        ImageBuilder& SetExtent(uint32_t width, uint32_t height, uint32_t depth = 1) {
+            createInfo.extent.width = width;
+            createInfo.extent.height = height;
+            createInfo.extent.depth = depth;
+            return *this;
+        }
+
+        ImageBuilder& SetUsage(ImageUsage usage) {
+            createInfo.usage = static_cast<VkImageUsageFlags>(usage);
+            return *this;
+        }
+
+        Image build(const Instance& instance);
+    };
+}

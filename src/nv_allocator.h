@@ -2,10 +2,10 @@
 
 #include <volk.h>
 #include <vk_mem_alloc.h>
-#include "nv_instance.h"
-#include "nv_device.h"
 
 namespace Nova {
+    class Instance;
+    class Device;
 
     struct BufferAllocation {
         VmaAllocation allocation;
@@ -21,6 +21,6 @@ namespace Nova {
         void Destroy(VkDevice device);
     };
 
-    ImageAllocation CreateImage(const Nova::Instance& instance, const Nova::Device& device, VkImageCreateInfo imageCreateInfo, VkImage* image);
-    BufferAllocation CreateBuffer(const Nova::Instance& instance, const Nova::Device& device, VkBufferCreateInfo bufferCreateInfo, VkBuffer* buffer);
+    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo);
+    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo);
 }

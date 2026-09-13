@@ -1,4 +1,6 @@
 #include "nv_allocator.h"
+#include "nv_device.h"
+#include "nv_instance.h"
 #include "nv_helpers.h"
 
 namespace {
@@ -17,8 +19,7 @@ namespace {
                 .pVulkanFunctions = &vkFunctions,
                 .instance = instance.GetRaw()
             };
-            VmaAllocator allocator = VK_NULL_HANDLE;
-            CheckVk(vmaCreateAllocator(&allocatorCI, &allocator));
+            CheckVk(vmaCreateAllocator(&allocatorCI, &s_allocator));
             sVmaInitialized = true;
         }
     }
@@ -42,7 +43,7 @@ namespace Nova {
         }
     }
 
-    ImageAllocation CreateImage(const Nova::Instance& instance, const Nova::Device& device, VkImageCreateInfo imageCreateInfo, VkImage* image) {
+    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
             .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
@@ -56,7 +57,7 @@ namespace Nova {
         return imageAlloc;
     }
 
-    BufferAllocation CreateBuffer(const Nova::Instance& instance, const Nova::Device& device, VkBufferCreateInfo bufferCreateInfo, VkBuffer* buffer) {
+    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
             .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
