@@ -43,10 +43,10 @@ namespace Nova {
         }
     }
 
-    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo) {
+    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo, AllocationFlag flags) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
-            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            .flags = static_cast<uint32_t>(flags),
             .usage = VMA_MEMORY_USAGE_AUTO
         };
         ImageAllocation imageAlloc{
@@ -57,10 +57,10 @@ namespace Nova {
         return imageAlloc;
     }
 
-    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo) {
+    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo, AllocationFlag flags) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
-            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            .flags = static_cast<uint32_t>(flags),
             .usage = VMA_MEMORY_USAGE_AUTO
         };
         BufferAllocation bufferAlloc{

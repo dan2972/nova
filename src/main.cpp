@@ -20,7 +20,7 @@ int main() {
     Nova::Image depthImage = imageBuilder
         .SetFormat(device.GetSupportedDepthFormats()[0])
         .SetExtent(window.GetWidth(), window.GetHeight())
-        .SetUsage(Nova::ImageUsage::DepthStencilAttachment)
+        .SetUsage(Nova::ImageUsageFlag::DepthStencilAttachment)
         .build(instance);
     
     return 0;

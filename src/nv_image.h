@@ -24,7 +24,7 @@ namespace Nova {
         D32SfloatS8Uint = VK_FORMAT_D32_SFLOAT_S8_UINT
     };
 
-    enum class ImageUsage {
+    enum class ImageUsageFlag : VkImageUsageFlags {
         TransferSrc = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         TransferDst = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         Sampled = VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -34,6 +34,18 @@ namespace Nova {
         TransientAttachment = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
         InputAttachment = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     };
+
+    constexpr ImageUsageFlag operator|(ImageUsageFlag a, ImageUsageFlag b) {
+        return static_cast<ImageUsageFlag>(static_cast<VkImageUsageFlags>(a) | static_cast<VkImageUsageFlags>(b));
+    }
+
+    constexpr ImageUsageFlag operator&(ImageUsageFlag a, ImageUsageFlag b) {
+        return static_cast<ImageUsageFlag>(static_cast<VkImageUsageFlags>(a) & static_cast<VkImageUsageFlags>(b));
+    }
+
+    constexpr ImageUsageFlag operator~(ImageUsageFlag a) {
+        return static_cast<ImageUsageFlag>(~static_cast<VkImageUsageFlags>(a));
+    }
 
     struct Image {
         ImageAllocation allocation;
@@ -89,7 +101,7 @@ namespace Nova {
             return *this;
         }
 
-        ImageBuilder& SetUsage(ImageUsage usage) {
+        ImageBuilder& SetUsage(ImageUsageFlag usage) {
             createInfo.usage = static_cast<VkImageUsageFlags>(usage);
             return *this;
         }

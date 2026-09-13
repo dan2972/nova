@@ -132,7 +132,7 @@ namespace Nova {
             exit(-1);
         }
         VkSurfaceCapabilitiesKHR capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevices[m_selectedPhysicalDeviceIndex].GetRaw(), m_surface, &capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GetPhysicalDevice().GetRaw(), m_surface, &capabilities);
         return capabilities;
     }
 
@@ -146,7 +146,7 @@ namespace Nova {
         std::vector<ImageFormat> supportedDepthFormats;
         for (const auto& format : depthFormats) {
             VkFormatProperties2 formatProperties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
-            vkGetPhysicalDeviceFormatProperties2(m_physicalDevices[m_selectedPhysicalDeviceIndex].GetRaw(), format, &formatProperties);
+            vkGetPhysicalDeviceFormatProperties2(GetPhysicalDevice().GetRaw(), format, &formatProperties);
             if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
                 supportedDepthFormats.push_back(static_cast<ImageFormat>(format));
             }
