@@ -1,6 +1,6 @@
 #include "nv_buffer.h"
 
-#include "logger.h"
+#include "nv_logger.h"
 
 namespace Nova {
     BufferDeviceAddress Buffer::GetBufferDeviceAddress()

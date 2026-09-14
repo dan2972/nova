@@ -2,7 +2,7 @@
 #include <algorithm>
 #include "nv_helpers.h"
 #include "nv_device.h"
-#include "logger.h"
+#include "nv_logger.h"
 
 namespace {
     void sGetPhysicalDevices(VkInstance instance, std::vector<Nova::PhysicalDevice>& physicalDevices)

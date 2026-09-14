@@ -2,7 +2,7 @@
 
 #include <volk.h>
 #include <source_location>
-#include "logger.h"
+#include "nv_logger.h"
 
 static inline void CheckVk(VkResult res, const std::source_location& location = std::source_location::current()) {
     if (res == 0) return;
