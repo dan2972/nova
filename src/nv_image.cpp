@@ -6,7 +6,9 @@
 namespace Nova {
     Image ImageBuilder::build(const Instance& instance) {
         Image image{};
-        image.extent = createInfo.extent;
+        image.width = createInfo.extent.width;
+        image.height = createInfo.extent.height;
+        image.depth = createInfo.extent.depth;
         image.format = static_cast<ImageFormat>(createInfo.format);
         image.allocation = CreateImageAllocation(instance, *device, createInfo);
         image.device = device->GetRaw();

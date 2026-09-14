@@ -65,9 +65,19 @@ namespace Nova {
         };
         BufferAllocation bufferAlloc{
             .allocation = nullptr,
-            .buffer = VK_NULL_HANDLE
+            .buffer = VK_NULL_HANDLE,
+            .allocationInfo = {}
         };
-        CheckVk(vmaCreateBuffer(s_allocator, &bufferCreateInfo, &allocCI, &bufferAlloc.buffer, &bufferAlloc.allocation, nullptr));
+        CheckVk(vmaCreateBuffer(s_allocator, &bufferCreateInfo, &allocCI, &bufferAlloc.buffer, &bufferAlloc.allocation, &bufferAlloc.allocationInfo));
         return bufferAlloc;
+    }
+
+    void DestroyAllocator()
+    {
+        if (s_allocator != VK_NULL_HANDLE) {
+            vmaDestroyAllocator(s_allocator);
+            s_allocator = VK_NULL_HANDLE;
+            sVmaInitialized = false;
+        }
     }
 }

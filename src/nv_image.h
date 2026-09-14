@@ -25,6 +25,7 @@ namespace Nova {
     };
 
     enum class ImageUsageFlag : VkImageUsageFlags {
+        None = 0,
         TransferSrc = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
         TransferDst = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
         Sampled = VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -48,10 +49,10 @@ namespace Nova {
     }
 
     struct Image {
-        ImageAllocation allocation;
-        VkExtent3D extent = {1, 1, 1};
         ImageFormat format = ImageFormat::R8G8B8A8Unorm;
-        VkImageView imageView = VK_NULL_HANDLE;
+        uint32_t width = 1;
+        uint32_t height = 1;
+        uint32_t depth = 1;
 
         void Destroy() {
             if (imageView != VK_NULL_HANDLE) {
@@ -65,7 +66,9 @@ namespace Nova {
         ~Image() { Destroy(); }
 
     private:
+        ImageAllocation allocation;
         VkDevice device = VK_NULL_HANDLE;
+        VkImageView imageView = VK_NULL_HANDLE;
 
         friend struct ImageBuilder;
     };
@@ -82,7 +85,6 @@ namespace Nova {
             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         };
-        VkExtent3D extent = {1, 1, 1};
         const Device* device = nullptr;
 
         ImageBuilder(const Device* device) : device(device) {

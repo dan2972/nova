@@ -113,6 +113,7 @@ namespace Nova {
     {
         if (m_device != VK_NULL_HANDLE) {
             CheckVk(vkDeviceWaitIdle(m_device));
+            DestroyAllocator();
             vkDestroyDevice(m_device, nullptr);
             m_device = VK_NULL_HANDLE;
         }
@@ -152,5 +153,33 @@ namespace Nova {
             }
         }
         return supportedDepthFormats;
+    }
+
+    Buffer Device::CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags)
+    {
+        VkBufferCreateInfo bufferCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = static_cast<VkBufferUsageFlags>(usageFlags)
+        };
+
+        BufferAllocation allocation = CreateBufferAllocation(*m_instance, *this, bufferCreateInfo, static_cast<AllocationFlag>(allocationFlags));
+
+        Buffer buffer{};
+        buffer.allocation = allocation;
+        buffer.size = size;
+        buffer.usageFlags = usageFlags;
+        buffer.device = m_device;
+
+        if ((usageFlags & BufferUsageFlag::ShaderDeviceAddress) != BufferUsageFlag::None) {
+            VkBufferDeviceAddressInfo bufferDeviceAddressInfo{
+                .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+                .buffer = allocation.buffer
+            };
+            VkDeviceAddress address = vkGetBufferDeviceAddress(m_device, &bufferDeviceAddressInfo);
+            buffer.deviceAddress = static_cast<BufferDeviceAddress>(address);
+        }
+
+        return buffer;
     }
 }

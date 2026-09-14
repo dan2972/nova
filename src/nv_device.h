@@ -7,6 +7,8 @@
 #include "nv_physicalDevice.h"
 #include "nv_window.h"
 #include "nv_image.h"
+#include "nv_buffer.h"
+#include "nv_allocator.h"
 
 namespace Nova {
     class Device {
@@ -32,6 +34,8 @@ namespace Nova {
         const VkSurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
 
         std::vector<ImageFormat> GetSupportedDepthFormats() const;
+
+        Buffer CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags = AllocationFlag::HostAccessSequentialWrite | AllocationFlag::HostAccessAllowTransfer | AllocationFlag::Mapped);
     private:
         Instance* m_instance;
         std::vector<PhysicalDevice> m_physicalDevices;

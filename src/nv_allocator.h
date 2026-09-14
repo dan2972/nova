@@ -9,6 +9,7 @@ namespace Nova {
 
     struct BufferAllocation {
         VmaAllocation allocation;
+        VmaAllocationInfo allocationInfo;
         VkBuffer buffer;
 
         void Destroy(VkDevice device);
@@ -22,6 +23,7 @@ namespace Nova {
     };
 
     enum AllocationFlag : uint32_t {
+        None = 0,
         DedicatedMemory = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
         NeverAllocate = VMA_ALLOCATION_CREATE_NEVER_ALLOCATE_BIT,
         Mapped = VMA_ALLOCATION_CREATE_MAPPED_BIT,
@@ -55,4 +57,6 @@ namespace Nova {
 
     ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
     BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
+
+    void DestroyAllocator();
 }
