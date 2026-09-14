@@ -9,6 +9,7 @@
 #include "nv_image.h"
 #include "nv_buffer.h"
 #include "nv_allocator.h"
+#include "nv_synchronization.h"
 
 namespace Nova {
     class Device {
@@ -36,6 +37,9 @@ namespace Nova {
         std::vector<ImageFormat> GetSupportedDepthFormats() const;
 
         Buffer CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags = AllocationFlag::HostAccessSequentialWrite | AllocationFlag::HostAccessAllowTransfer | AllocationFlag::Mapped);
+
+        Fence CreateFence(bool signaled = false);
+        Semaphore CreateSemaphore();
     private:
         Instance* m_instance;
         std::vector<PhysicalDevice> m_physicalDevices;

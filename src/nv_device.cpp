@@ -182,4 +182,31 @@ namespace Nova {
 
         return buffer;
     }
+
+    Fence Device::CreateFence(bool signaled)
+    {
+        VkFenceCreateInfo fenceCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : static_cast<VkFenceCreateFlags>(0)
+        };
+
+        Fence fence{};
+        fence.device = m_device;
+        CheckVk(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence.fence));
+
+        return fence;
+    }
+
+    Semaphore Device::CreateSemaphore()
+    {
+        static const VkSemaphoreCreateInfo semaphoreCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+        };
+
+        Semaphore semaphore{};
+        semaphore.device = m_device;
+        CheckVk(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore.semaphore));
+
+        return semaphore;
+    }
 }

@@ -65,8 +65,8 @@ namespace Nova {
         };
         BufferAllocation bufferAlloc{
             .allocation = nullptr,
-            .buffer = VK_NULL_HANDLE,
-            .allocationInfo = {}
+            .allocationInfo = {},
+            .buffer = VK_NULL_HANDLE
         };
         CheckVk(vmaCreateBuffer(s_allocator, &bufferCreateInfo, &allocCI, &bufferAlloc.buffer, &bufferAlloc.allocation, &bufferAlloc.allocationInfo));
         return bufferAlloc;
