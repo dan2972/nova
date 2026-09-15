@@ -30,5 +30,8 @@ int main() {
 
     Nova::Fence fence = device.CreateFence();
     Nova::Semaphore semaphore = device.CreateSemaphore();
+
+    Nova::CommandPool commandPool = device.CreateCommandPool();
+    Nova::CommandBuffer commandBuffer = device.CreateCommandBuffer(commandPool);
     return 0;
 }

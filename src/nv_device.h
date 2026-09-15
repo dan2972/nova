@@ -10,6 +10,7 @@
 #include "nv_buffer.h"
 #include "nv_allocator.h"
 #include "nv_synchronization.h"
+#include "nv_commandBuffer.h"
 
 namespace Nova {
     class Device {
@@ -40,6 +41,11 @@ namespace Nova {
 
         Fence CreateFence(bool signaled = false);
         Semaphore CreateSemaphore();
+
+        CommandPool CreateCommandPool(CommandPoolCreateFlag flags = CommandPoolCreateFlag::None);
+        CommandPool CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags = CommandPoolCreateFlag::None);
+
+        CommandBuffer CreateCommandBuffer(CommandPool& commandPool);
     private:
         Instance* m_instance;
         std::vector<PhysicalDevice> m_physicalDevices;

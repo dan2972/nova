@@ -82,6 +82,11 @@ namespace Nova {
     Device::Device(Instance* instance, VkSurfaceKHR surface)
         : m_instance(instance), m_surface(surface)
     {
+        if (!m_instance) {
+            LogError("Instance is null.");
+            exit(-1);
+        }
+
         sGetPhysicalDevices(m_instance->m_instance, m_physicalDevices);
         sSortPhysicalDevices(m_physicalDevices);
 
@@ -208,5 +213,42 @@ namespace Nova {
         CheckVk(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore.semaphore));
 
         return semaphore;
+    }
+
+    CommandPool Device::CreateCommandPool(CommandPoolCreateFlag flags)
+    {
+        return CreateCommandPool(GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), flags);
+    }
+
+    CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags)
+    {
+        VkCommandPoolCreateInfo commandPoolCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .queueFamilyIndex = queueFamilyIndex,
+            .flags = static_cast<VkCommandPoolCreateFlags>(flags)
+        };
+
+        CommandPool commandPool{};
+        commandPool.m_device = m_device;
+        CheckVk(vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &commandPool.m_commandPool));
+
+        return commandPool;
+    }
+
+    CommandBuffer Device::CreateCommandBuffer(CommandPool& commandPool)
+    {
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool.GetRaw(),
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1
+        };
+
+        CommandBuffer commandBuffer{};
+        commandBuffer.m_device = m_device;
+        commandBuffer.m_commandPool = &commandPool;
+        CheckVk(vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &commandBuffer.m_commandBuffer));
+
+        return commandBuffer;
     }
 }
