@@ -48,33 +48,60 @@ namespace Nova {
         return static_cast<ImageUsageFlag>(~static_cast<VkImageUsageFlags>(a));
     }
 
-    struct Image {
-        ImageFormat format = ImageFormat::R8G8B8A8Unorm;
-        uint32_t width = 1;
-        uint32_t height = 1;
-        uint32_t depth = 1;
-
-        void Destroy() {
-            if (imageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(device, imageView, nullptr);
-                imageView = VK_NULL_HANDLE;
-            }
-            allocation.Destroy(device);
-        }
-
+    class Image {
+    public:
         Image() = default;
         ~Image() { Destroy(); }
 
-    private:
-        ImageAllocation allocation;
-        VkDevice device = VK_NULL_HANDLE;
-        VkImageView imageView = VK_NULL_HANDLE;
+        void Destroy() {
+            if (m_imageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(m_device, m_imageView, nullptr);
+                m_imageView = VK_NULL_HANDLE;
+            }
+            m_allocation.Destroy(m_device);
+        }
 
-        friend struct ImageBuilder;
+        uint32_t GetWidth() const { return m_extent.width; }
+        uint32_t GetHeight() const { return m_extent.height; }
+        uint32_t GetDepth() const { return m_extent.depth; }
+        ImageFormat GetFormat() const { return m_format; }
+
+    private:
+        ImageAllocation m_allocation;
+        VkDevice m_device = VK_NULL_HANDLE;
+        VkImageView m_imageView = VK_NULL_HANDLE;
+        ImageFormat m_format = ImageFormat::R8G8B8A8Unorm;
+        VkExtent3D m_extent{1, 1, 1};
+
+        friend class ImageBuilder;
     };
 
-    struct ImageBuilder {
-        VkImageCreateInfo createInfo{
+    class ImageBuilder {
+    public:
+        ImageBuilder(const Device* device) : m_device(device) {
+            m_createInfo.extent = {1, 1, 1};
+        }
+
+        ImageBuilder& SetFormat(ImageFormat format) {
+            m_createInfo.format = static_cast<VkFormat>(format);
+            return *this;
+        }
+
+        ImageBuilder& SetExtent(uint32_t width, uint32_t height, uint32_t depth = 1) {
+            m_createInfo.extent.width = width;
+            m_createInfo.extent.height = height;
+            m_createInfo.extent.depth = depth;
+            return *this;
+        }
+
+        ImageBuilder& SetUsage(ImageUsageFlag usage) {
+            m_createInfo.usage = static_cast<VkImageUsageFlags>(usage);
+            return *this;
+        }
+
+        Image build(const Instance& instance);
+    private:
+        VkImageCreateInfo m_createInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .imageType = VK_IMAGE_TYPE_2D,
             .format = VK_FORMAT_B8G8R8A8_SRGB,
@@ -85,29 +112,6 @@ namespace Nova {
             .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
             .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         };
-        const Device* device = nullptr;
-
-        ImageBuilder(const Device* device) : device(device) {
-            createInfo.extent = {1, 1, 1};
-        }
-
-        ImageBuilder& SetFormat(ImageFormat format) {
-            createInfo.format = static_cast<VkFormat>(format);
-            return *this;
-        }
-
-        ImageBuilder& SetExtent(uint32_t width, uint32_t height, uint32_t depth = 1) {
-            createInfo.extent.width = width;
-            createInfo.extent.height = height;
-            createInfo.extent.depth = depth;
-            return *this;
-        }
-
-        ImageBuilder& SetUsage(ImageUsageFlag usage) {
-            createInfo.usage = static_cast<VkImageUsageFlags>(usage);
-            return *this;
-        }
-
-        Image build(const Instance& instance);
+        const Device* m_device = nullptr;
     };
 }

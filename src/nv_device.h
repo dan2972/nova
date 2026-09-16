@@ -46,6 +46,7 @@ namespace Nova {
         CommandPool CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags = CommandPoolCreateFlag::None);
 
         CommandBuffer CreateCommandBuffer(CommandPool& commandPool);
+        std::vector<CommandBuffer> CreateCommandBuffers(CommandPool& commandPool, size_t count);
     private:
         Instance* m_instance;
         std::vector<PhysicalDevice> m_physicalDevices;

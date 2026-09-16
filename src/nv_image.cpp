@@ -6,30 +6,28 @@
 namespace Nova {
     Image ImageBuilder::build(const Instance& instance) {
         Image image{};
-        image.width = createInfo.extent.width;
-        image.height = createInfo.extent.height;
-        image.depth = createInfo.extent.depth;
-        image.format = static_cast<ImageFormat>(createInfo.format);
-        image.allocation = CreateImageAllocation(instance, *device, createInfo);
-        image.device = device->GetRaw();
+        image.m_extent = m_createInfo.extent;
+        image.m_format = static_cast<ImageFormat>(m_createInfo.format);
+        image.m_allocation = CreateImageAllocation(instance, *m_device, m_createInfo);
+        image.m_device = m_device->GetRaw();
 
         VkImageAspectFlags aspectMask = 0;
-        if (createInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        if (m_createInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
             aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        } else if (createInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        } else if (m_createInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            if (createInfo.format == VK_FORMAT_D32_SFLOAT_S8_UINT || createInfo.format == VK_FORMAT_D24_UNORM_S8_UINT) {
+            if (m_createInfo.format == VK_FORMAT_D32_SFLOAT_S8_UINT || m_createInfo.format == VK_FORMAT_D24_UNORM_S8_UINT) {
                 aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
-        } else if (createInfo.usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        } else if (m_createInfo.usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
             aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
         VkImageViewCreateInfo viewCreateInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = image.allocation.image,
+            .image = image.m_allocation.image,
             .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = createInfo.format,
+            .format = m_createInfo.format,
             .subresourceRange = {
                 .aspectMask = aspectMask,
                 .baseMipLevel = 0,
@@ -38,7 +36,7 @@ namespace Nova {
                 .layerCount = 1
             }
         };
-        CheckVk(vkCreateImageView(device->GetRaw(), &viewCreateInfo, nullptr, &image.imageView));
+        CheckVk(vkCreateImageView(m_device->GetRaw(), &viewCreateInfo, nullptr, &image.m_imageView));
         return image;
     }
 }

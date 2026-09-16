@@ -171,10 +171,10 @@ namespace Nova {
         BufferAllocation allocation = CreateBufferAllocation(*m_instance, *this, bufferCreateInfo, static_cast<AllocationFlag>(allocationFlags));
 
         Buffer buffer{};
-        buffer.allocation = allocation;
-        buffer.size = size;
-        buffer.usageFlags = usageFlags;
-        buffer.device = m_device;
+        buffer.m_allocation = allocation;
+        buffer.m_size = size;
+        buffer.m_usageFlags = usageFlags;
+        buffer.m_device = m_device;
 
         if ((usageFlags & BufferUsageFlag::ShaderDeviceAddress) != BufferUsageFlag::None) {
             VkBufferDeviceAddressInfo bufferDeviceAddressInfo{
@@ -182,7 +182,7 @@ namespace Nova {
                 .buffer = allocation.buffer
             };
             VkDeviceAddress address = vkGetBufferDeviceAddress(m_device, &bufferDeviceAddressInfo);
-            buffer.deviceAddress = static_cast<BufferDeviceAddress>(address);
+            buffer.m_deviceAddress = static_cast<BufferDeviceAddress>(address);
         }
 
         return buffer;
@@ -250,5 +250,29 @@ namespace Nova {
         CheckVk(vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &commandBuffer.m_commandBuffer));
 
         return commandBuffer;
+    }
+
+    std::vector<CommandBuffer> Device::CreateCommandBuffers(CommandPool &commandPool, size_t count)
+    {
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            .commandPool = commandPool.GetRaw(),
+            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = static_cast<uint32_t>(count)
+        };
+
+        std::vector<VkCommandBuffer> commandBuffers(count);
+        CheckVk(vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, commandBuffers.data()));
+
+        std::vector<CommandBuffer> novaCommandBuffers;
+        novaCommandBuffers.reserve(count);
+        for (size_t i = 0; i < count; ++i) {
+            CommandBuffer novaCommandBuffer{};
+            novaCommandBuffer.m_device = m_device;
+            novaCommandBuffer.m_commandPool = &commandPool;
+            novaCommandBuffer.m_commandBuffer = commandBuffers[i];
+            novaCommandBuffers.push_back(std::move(novaCommandBuffer));
+        }
+        return novaCommandBuffers;
     }
 }

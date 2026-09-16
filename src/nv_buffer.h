@@ -35,24 +35,26 @@ namespace Nova {
         return static_cast<BufferUsageFlag>(~static_cast<VkBufferUsageFlags>(a));
     }
 
-    struct Buffer {
-        BufferSize size = 0;
-        BufferUsageFlag usageFlags;
-
-        void Destroy() {
-            allocation.Destroy(device);
-            size = 0;
-        }
-
+    class Buffer {
+    public:
         Buffer() = default;
         ~Buffer() { Destroy(); }
 
+        void Destroy() {
+            m_allocation.Destroy(m_device);
+            m_size = 0;
+        }
+
+        BufferSize GetSize() const { return m_size; }
+        BufferUsageFlag GetUsageFlags() const { return m_usageFlags; }
         BufferDeviceAddress GetBufferDeviceAddress();
 
     private:
-        BufferAllocation allocation;
-        VkDevice device = nullptr;
-        BufferDeviceAddress deviceAddress = 0;
+        BufferAllocation m_allocation;
+        VkDevice m_device = nullptr;
+        BufferDeviceAddress m_deviceAddress = 0;
+        BufferSize m_size = 0;
+        BufferUsageFlag m_usageFlags;
 
         friend class Device;
     };
