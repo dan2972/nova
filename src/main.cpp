@@ -23,6 +23,8 @@ int main() {
         .SetUsage(Nova::ImageUsageFlag::DepthStencilAttachment)
         .build(instance, Nova::AllocationFlag::DedicatedMemory);
 
+    Nova::ImageView depthImageView = depthImage.CreateView(Nova::ImageAspectFlag::Depth);
+
     Nova::Buffer b1 = device.CreateBuffer(1024, Nova::BufferUsageFlag::VertexBuffer);
     Nova::Buffer b2 = device.CreateBuffer(2048, Nova::BufferUsageFlag::IndexBuffer);
     Nova::Buffer b3 = device.CreateBuffer(4096, Nova::BufferUsageFlag::ShaderDeviceAddress);

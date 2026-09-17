@@ -8,6 +8,7 @@ namespace Nova {
     class Device;
     class Instance;
     class Texture;
+    class ImageView;
 
     enum class ImageFormat {
         R8G8B8A8Unorm = VK_FORMAT_R8G8B8A8_UNORM,
@@ -40,6 +41,14 @@ namespace Nova {
 
     ENABLE_BITMASK_OPERATORS(ImageUsageFlag, VkImageUsageFlags)
 
+    enum class ImageAspectFlag : VkImageAspectFlags {
+        None = 0,
+        Color = VK_IMAGE_ASPECT_COLOR_BIT,
+        Depth = VK_IMAGE_ASPECT_DEPTH_BIT,
+        Stencil = VK_IMAGE_ASPECT_STENCIL_BIT,
+        Metadata = VK_IMAGE_ASPECT_METADATA_BIT
+    };
+
     class Image {
     public:
         Image() = default;
@@ -54,20 +63,14 @@ namespace Nova {
                 Destroy();
                 m_allocation = std::move(other.m_allocation);
                 m_device = other.m_device;
-                m_imageView = other.m_imageView;
                 m_format = other.m_format;
                 m_extent = other.m_extent;
                 other.m_device = VK_NULL_HANDLE;
-                other.m_imageView = VK_NULL_HANDLE;
             }
             return *this;
         }
 
         void Destroy() {
-            if (m_imageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(m_device, m_imageView, nullptr);
-                m_imageView = VK_NULL_HANDLE;
-            }
             m_allocation.Destroy(m_device);
         }
 
@@ -76,15 +79,37 @@ namespace Nova {
         uint32_t GetDepth() const { return m_extent.depth; }
         ImageFormat GetFormat() const { return m_format; }
 
+        ImageView CreateView() const;
+        ImageView CreateView(ImageAspectFlag aspectMask) const;
+
     private:
         ImageAllocation m_allocation;
         VkDevice m_device = VK_NULL_HANDLE;
-        VkImageView m_imageView = VK_NULL_HANDLE;
         ImageFormat m_format = ImageFormat::R8G8B8A8Unorm;
         VkExtent3D m_extent{1, 1, 1};
+        VkImageUsageFlags m_usageFlags = 0;
+        uint32_t m_mipLevels = 1;
 
         friend class ImageBuilder;
         friend class Texture;
+    };
+
+    class ImageView {
+    public:
+        ImageView() = default;
+        ~ImageView() { Destroy(); }
+
+        void Destroy() {
+            if (m_imageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(m_device, m_imageView, nullptr);
+                m_imageView = VK_NULL_HANDLE;
+            }
+        }
+    private:
+        VkImageView m_imageView = VK_NULL_HANDLE;
+        VkDevice m_device = VK_NULL_HANDLE;
+
+        friend class Image;
     };
 
     class ImageBuilder {
