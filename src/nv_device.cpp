@@ -5,33 +5,6 @@
 #include "nv_logger.h"
 
 namespace {
-    void sGetPhysicalDevices(VkInstance instance, std::vector<Nova::PhysicalDevice>& physicalDevices)
-    {
-        uint32_t deviceCount = 0;
-        std::vector<VkPhysicalDevice> physicalDevicesRaw;
-        CheckVk(vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr));
-        physicalDevicesRaw.resize(deviceCount);
-        CheckVk(vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevicesRaw.data()));
-        physicalDevices.reserve(deviceCount);
-        for (uint32_t i = 0; i < deviceCount; ++i) {
-            physicalDevices.emplace_back(physicalDevicesRaw[i]);
-        }
-    }
-
-    // sort by device type, preferring discrete GPUs,
-    // then by amount of VRAM, preferring more VRAM
-    void sSortPhysicalDevices(std::vector<Nova::PhysicalDevice>& physicalDevices)
-    {
-        std::sort(physicalDevices.begin(), physicalDevices.end(),
-            [](Nova::PhysicalDevice a, Nova::PhysicalDevice b) {
-                if (a.GetType() != b.GetType()) {
-                    return a.GetType() == Nova::PhysicalDevice::GPUType::DiscreteGPU;
-                }
-
-                return a.GetVRAMSize() > b.GetVRAMSize();
-            });
-    }
-
     bool sCreateLogicalDevice(const Nova::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, VkDevice& device)
     {
         const float qfPriority = 1.0f;
@@ -79,25 +52,24 @@ namespace {
 }
 
 namespace Nova {
-    Device::Device(Instance* instance, VkSurfaceKHR surface)
-        : m_instance(instance), m_surface(surface)
+    Device::Device(Instance* instance, VkSurfaceKHR surface, PhysicalDevice* physicalDevice)
+        : m_instance(instance), m_surface(surface), m_physicalDevice(physicalDevice)
     {
         if (!m_instance) {
             LogError("Instance is null.");
             exit(-1);
         }
 
-        sGetPhysicalDevices(m_instance->m_instance, m_physicalDevices);
-        sSortPhysicalDevices(m_physicalDevices);
+        if (!m_physicalDevice) {
+            m_physicalDevice = m_instance->GetBestPhysicalDevice();
+        }
 
-        if (m_physicalDevices.empty()) {
+        if (m_physicalDevice == nullptr) {
             LogError("No GPU found.");
             exit(-1);
         }
-
-        m_selectedPhysicalDeviceIndex = 0;
         
-        const PhysicalDevice& selectedDevice = m_physicalDevices[m_selectedPhysicalDeviceIndex];
+        const PhysicalDevice& selectedDevice = *m_physicalDevice;
         LogInfo("Selected GPU: {} (type: {}, VRAM: {} MB)",
             selectedDevice.GetDeviceName(),
             static_cast<int>(selectedDevice.GetType()),
@@ -109,8 +81,8 @@ namespace Nova {
         }
     }
 
-    Device::Device(Instance* instance, Window* window)
-        : Device(instance, window->GetSurface())
+    Device::Device(Instance* instance, Window* window, PhysicalDevice* physicalDevice)
+        : Device(instance, window->GetSurface(), physicalDevice)
     {
     }
 
@@ -124,21 +96,13 @@ namespace Nova {
         }
     }
 
-    void Device::SelectPhysicalDevice(size_t index)  {
-        if (index >= m_physicalDevices.size()) {
-            LogError("Invalid physical device index: {}", index);
-            exit(-1);
-        }
-        m_selectedPhysicalDeviceIndex = index;
-    }
-
     const VkSurfaceCapabilitiesKHR Device::GetSurfaceCapabilities() const {
         if (m_surface == VK_NULL_HANDLE) {
             LogError("Surface is not set for the device.");
             exit(-1);
         }
         VkSurfaceCapabilitiesKHR capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GetPhysicalDevice().GetRaw(), m_surface, &capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GetPhysicalDevice()->GetRaw(), m_surface, &capabilities);
         return capabilities;
     }
 
@@ -152,7 +116,7 @@ namespace Nova {
         std::vector<ImageFormat> supportedDepthFormats;
         for (const auto& format : depthFormats) {
             VkFormatProperties2 formatProperties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
-            vkGetPhysicalDeviceFormatProperties2(GetPhysicalDevice().GetRaw(), format, &formatProperties);
+            vkGetPhysicalDeviceFormatProperties2(GetPhysicalDevice()->GetRaw(), format, &formatProperties);
             if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
                 supportedDepthFormats.push_back(static_cast<ImageFormat>(format));
             }
@@ -171,7 +135,7 @@ namespace Nova {
         BufferAllocation allocation = CreateBufferAllocation(*m_instance, *this, bufferCreateInfo, static_cast<AllocationFlag>(allocationFlags));
 
         Buffer buffer{};
-        buffer.m_allocation = allocation;
+        buffer.m_allocation = std::move(allocation);
         buffer.m_size = size;
         buffer.m_usageFlags = usageFlags;
         buffer.m_device = m_device;
@@ -179,7 +143,7 @@ namespace Nova {
         if ((usageFlags & BufferUsageFlag::ShaderDeviceAddress) != BufferUsageFlag::None) {
             VkBufferDeviceAddressInfo bufferDeviceAddressInfo{
                 .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-                .buffer = allocation.buffer
+                .buffer = buffer.GetRaw()
             };
             VkDeviceAddress address = vkGetBufferDeviceAddress(m_device, &bufferDeviceAddressInfo);
             buffer.m_deviceAddress = static_cast<BufferDeviceAddress>(address);
@@ -217,7 +181,7 @@ namespace Nova {
 
     CommandPool Device::CreateCommandPool(CommandPoolCreateFlag flags)
     {
-        return CreateCommandPool(GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), flags);
+        return CreateCommandPool(GetPhysicalDevice()->GetGraphicsQueueFamilyIndex(), flags);
     }
 
     CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags)
@@ -274,5 +238,32 @@ namespace Nova {
             novaCommandBuffers.push_back(std::move(novaCommandBuffer));
         }
         return novaCommandBuffers;
+    }
+
+    void Device::SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence)
+    {
+        if (commandBuffer == nullptr || commandBuffer->GetRaw() == VK_NULL_HANDLE) {
+            LogError("Invalid command buffer.");
+            return;
+        }
+        VkCommandBuffer rawCommandBuffer = commandBuffer->GetRaw();
+        VkSubmitInfo submitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &rawCommandBuffer
+        };
+
+        VkQueue graphicsQueue;
+        vkGetDeviceQueue(m_device, GetPhysicalDevice()->GetGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
+        CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE));
+    }
+
+    void Device::WaitForFence(Fence* fence, uint64_t timeout)
+    {
+        if (fence == nullptr || fence->fence == VK_NULL_HANDLE) {
+            LogError("Invalid fence.");
+            return;
+        }
+        CheckVk(vkWaitForFences(m_device, 1, &fence->fence, VK_TRUE, timeout));
     }
 }

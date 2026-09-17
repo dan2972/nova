@@ -21,17 +21,19 @@ int main() {
         .SetFormat(device.GetSupportedDepthFormats()[0])
         .SetExtent(window.GetWidth(), window.GetHeight())
         .SetUsage(Nova::ImageUsageFlag::DepthStencilAttachment)
-        .build(instance);
+        .build(instance, Nova::AllocationFlag::DedicatedMemory);
 
     Nova::Buffer b1 = device.CreateBuffer(1024, Nova::BufferUsageFlag::VertexBuffer);
     Nova::Buffer b2 = device.CreateBuffer(2048, Nova::BufferUsageFlag::IndexBuffer);
     Nova::Buffer b3 = device.CreateBuffer(4096, Nova::BufferUsageFlag::ShaderDeviceAddress);
     printf("Buffer device address: 0x%llx\n", (unsigned long long)b3.GetBufferDeviceAddress());
 
-    Nova::Fence fence = device.CreateFence();
+    Nova::Fence fence = device.CreateFence(true);
     Nova::Semaphore semaphore = device.CreateSemaphore();
 
     Nova::CommandPool commandPool = device.CreateCommandPool();
     Nova::CommandBuffer commandBuffer = device.CreateCommandBuffer(commandPool);
+
+    Nova::Texture texture = Nova::Texture::CreateFromFile("res/test1.ktx", &device, &commandPool);
     return 0;
 }

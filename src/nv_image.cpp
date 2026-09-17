@@ -4,11 +4,11 @@
 #include "nv_helpers.h"
 
 namespace Nova {
-    Image ImageBuilder::build(const Instance& instance) {
+    Image ImageBuilder::build(const Instance& instance, AllocationFlag allocationFlags) {
         Image image{};
         image.m_extent = m_createInfo.extent;
         image.m_format = static_cast<ImageFormat>(m_createInfo.format);
-        image.m_allocation = CreateImageAllocation(instance, *m_device, m_createInfo);
+        image.m_allocation = CreateImageAllocation(instance, *m_device, m_createInfo, allocationFlags);
         image.m_device = m_device->GetRaw();
 
         VkImageAspectFlags aspectMask = 0;
@@ -31,7 +31,7 @@ namespace Nova {
             .subresourceRange = {
                 .aspectMask = aspectMask,
                 .baseMipLevel = 0,
-                .levelCount = 1,
+                .levelCount = m_createInfo.mipLevels,
                 .baseArrayLayer = 0,
                 .layerCount = 1
             }

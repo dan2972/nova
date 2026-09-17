@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include <volk.h>
 #include <vk_mem_alloc.h>
 
@@ -8,16 +10,48 @@ namespace Nova {
     class Device;
 
     struct BufferAllocation {
-        VmaAllocation allocation;
-        VmaAllocationInfo allocationInfo;
-        VkBuffer buffer;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VmaAllocationInfo allocationInfo = {};
+        VkBuffer buffer = VK_NULL_HANDLE;
+
+        BufferAllocation() = default;
+        BufferAllocation(const BufferAllocation&) = delete;
+        BufferAllocation& operator=(const BufferAllocation&) = delete;
+
+        BufferAllocation(BufferAllocation&& other) noexcept { *this = std::move(other); }
+        BufferAllocation& operator=(BufferAllocation&& other) noexcept {
+            if (this != &other) {
+                allocation = other.allocation;
+                allocationInfo = other.allocationInfo;
+                buffer = other.buffer;
+                other.allocation = VK_NULL_HANDLE;
+                other.allocationInfo = {};
+                other.buffer = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
 
         void Destroy(VkDevice device);
     };
 
     struct ImageAllocation {
-        VmaAllocation allocation;
-        VkImage image;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VkImage image = VK_NULL_HANDLE;
+
+        ImageAllocation() = default;
+        ImageAllocation(const ImageAllocation&) = delete;
+        ImageAllocation& operator=(const ImageAllocation&) = delete;
+
+        ImageAllocation(ImageAllocation&& other) noexcept { *this = std::move(other); }
+        ImageAllocation& operator=(ImageAllocation&& other) noexcept {
+            if (this != &other) {
+                allocation = other.allocation;
+                image = other.image;
+                other.allocation = VK_NULL_HANDLE;
+                other.image = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
 
         void Destroy(VkDevice device);
     };

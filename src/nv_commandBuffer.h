@@ -2,6 +2,7 @@
 
 #include <volk.h>
 #include <utility>
+#include "nv_helpers.h"
 
 namespace Nova {
     class Device;
@@ -13,17 +14,16 @@ namespace Nova {
         Protected = VK_COMMAND_POOL_CREATE_PROTECTED_BIT
     };
 
-    constexpr CommandPoolCreateFlag operator|(CommandPoolCreateFlag a, CommandPoolCreateFlag b) {
-        return static_cast<CommandPoolCreateFlag>(static_cast<VkCommandPoolCreateFlags>(a) | static_cast<VkCommandPoolCreateFlags>(b));
-    }
+    ENABLE_BITMASK_OPERATORS(CommandPoolCreateFlag, VkCommandPoolCreateFlags)
 
-    constexpr CommandPoolCreateFlag operator&(CommandPoolCreateFlag a, CommandPoolCreateFlag b) {
-        return static_cast<CommandPoolCreateFlag>(static_cast<VkCommandPoolCreateFlags>(a) & static_cast<VkCommandPoolCreateFlags>(b));
-    }
+    enum class CommandBufferBeginFlag : VkCommandBufferUsageFlags {
+        None = 0,
+        OneTimeSubmit = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        RenderPassContinue = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT,
+        SimultaneousUse = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
+    };
 
-    constexpr CommandPoolCreateFlag operator~(CommandPoolCreateFlag a) {
-        return static_cast<CommandPoolCreateFlag>(~static_cast<VkCommandPoolCreateFlags>(a));
-    }
+    ENABLE_BITMASK_OPERATORS(CommandBufferBeginFlag, VkCommandBufferUsageFlags)
 
     class CommandPool {
     public:
@@ -89,6 +89,19 @@ namespace Nova {
                 m_commandBuffer = VK_NULL_HANDLE;
             }
         }
+
+        void Begin(CommandBufferBeginFlag flags = CommandBufferBeginFlag::None) {
+            VkCommandBufferBeginInfo beginInfo{
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                .flags = static_cast<VkCommandBufferUsageFlags>(flags)
+            };
+            CheckVk(vkBeginCommandBuffer(m_commandBuffer, &beginInfo));
+        }
+
+        void End() {
+            CheckVk(vkEndCommandBuffer(m_commandBuffer));
+        }
+
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         VkDevice m_device = VK_NULL_HANDLE;

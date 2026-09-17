@@ -224,6 +224,52 @@ namespace Nova {
     {
         sCreateInstance(&m_instance, applicationName);
         volkLoadInstance(m_instance);
+        QueryPhysicalDevices();
+        SortPhysicalDevicesDefault(m_physicalDevices);
         m_debugMessenger = sSetupDebugMessenger(*this, sDefaultDebugCallback);
+    }
+
+    const std::vector<PhysicalDevice>& Instance::QueryPhysicalDevices()
+    {
+        uint32_t deviceCount = 0;
+        CheckVk(vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
+        if (deviceCount == 0) {
+            LogError("Failed to find GPUs with Vulkan support.");
+            exit(-1);
+        }
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        CheckVk(vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data()));
+
+        m_physicalDevices.clear();
+        m_physicalDevices.reserve(deviceCount);
+        for (const auto& device : devices) {
+            m_physicalDevices.emplace_back(device);
+        }
+        SortPhysicalDevicesDefault(m_physicalDevices);
+        return m_physicalDevices;
+    }
+
+    void Instance::SortPhysicalDevicesDefault(std::vector<PhysicalDevice> &physicalDevices) const
+    {
+        // sort by device type, preferring discrete GPUs,
+        // then by amount of VRAM, preferring more VRAM
+        std::sort(physicalDevices.begin(), physicalDevices.end(),
+            [](Nova::PhysicalDevice a, Nova::PhysicalDevice b) {
+                if (a.GetType() != b.GetType()) {
+                    return a.GetType() == Nova::PhysicalDevice::GPUType::DiscreteGPU;
+                }
+
+                return a.GetVRAMSize() > b.GetVRAMSize();
+            });
+    }
+
+    const PhysicalDevice* Instance::GetBestPhysicalDevice() const
+    {
+        if (m_physicalDevices.empty()) {
+            LogError("No GPU found.");
+            return nullptr;
+        }
+        return &m_physicalDevices[0];
     }
 }

@@ -14,6 +14,7 @@ find_package(glm CONFIG REQUIRED)
 find_package(slang CONFIG REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
+find_package(Ktx CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -25,6 +26,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     slang::slang
     spdlog::spdlog
     glfw
+    KTX::ktx
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -42,7 +44,7 @@ function(copy_target_resources TARGET_NAME SOURCE_DIR DEST_DIR)
     add_dependencies(${TARGET_NAME} ${TARGET_NAME}_copy_folder)
 endfunction()
 
-# copy_target_resources(${PROJECT_NAME} 
-#     ${CMAKE_CURRENT_SOURCE_DIR}/res 
-#     $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
-# )
+copy_target_resources(${PROJECT_NAME} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/res 
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
+)

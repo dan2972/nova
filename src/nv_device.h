@@ -15,8 +15,8 @@
 namespace Nova {
     class Device {
     public:
-        Device(Instance* instance, VkSurfaceKHR surface = VK_NULL_HANDLE);
-        Device(Instance* instance, Window* window);
+        Device(Instance* instance, VkSurfaceKHR surface = VK_NULL_HANDLE, PhysicalDevice* physicalDevice = nullptr);
+        Device(Instance* instance, Window* window, PhysicalDevice* physicalDevice = nullptr);
         ~Device();
 
         Device(const Device&) = delete;
@@ -28,10 +28,8 @@ namespace Nova {
         VkSurfaceKHR GetSurface() const { return m_surface; }
         void SetSurface(VkSurfaceKHR surface) { m_surface = surface; }
 
-        PhysicalDevice GetPhysicalDevice() const { return m_physicalDevices[m_selectedPhysicalDeviceIndex]; }
-        const std::vector<PhysicalDevice> GetPhysicalDevices() const { return m_physicalDevices; }
-
-        void SelectPhysicalDevice(size_t index);
+        const Instance* GetInstance() const { return m_instance; }
+        const PhysicalDevice* GetPhysicalDevice() const { return m_physicalDevice; }
 
         const VkSurfaceCapabilitiesKHR GetSurfaceCapabilities() const;
 
@@ -47,10 +45,12 @@ namespace Nova {
 
         CommandBuffer CreateCommandBuffer(CommandPool& commandPool);
         std::vector<CommandBuffer> CreateCommandBuffers(CommandPool& commandPool, size_t count);
+
+        void SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence = nullptr);
+        void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX);
     private:
-        Instance* m_instance;
-        std::vector<PhysicalDevice> m_physicalDevices;
-        size_t m_selectedPhysicalDeviceIndex;
+        const Instance* m_instance;
+        const PhysicalDevice* m_physicalDevice;
         VkDevice m_device = VK_NULL_HANDLE;
         VkSurfaceKHR m_surface = VK_NULL_HANDLE;
     };

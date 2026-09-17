@@ -2,6 +2,7 @@
 
 #include <volk.h>
 #include "nv_allocator.h"
+#include "nv_helpers.h"
 
 namespace Nova {
     using BufferDeviceAddress = VkDeviceAddress;
@@ -23,27 +24,40 @@ namespace Nova {
         ShaderDeviceAddress = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
     };
 
-    constexpr BufferUsageFlag operator|(BufferUsageFlag a, BufferUsageFlag b) {
-        return static_cast<BufferUsageFlag>(static_cast<VkBufferUsageFlags>(a) | static_cast<VkBufferUsageFlags>(b));
-    }
-
-    constexpr BufferUsageFlag operator&(BufferUsageFlag a, BufferUsageFlag b) {
-        return static_cast<BufferUsageFlag>(static_cast<VkBufferUsageFlags>(a) & static_cast<VkBufferUsageFlags>(b));
-    }
-
-    constexpr BufferUsageFlag operator~(BufferUsageFlag a) {
-        return static_cast<BufferUsageFlag>(~static_cast<VkBufferUsageFlags>(a));
-    }
+    ENABLE_BITMASK_OPERATORS(BufferUsageFlag, VkBufferUsageFlags)
 
     class Buffer {
     public:
         Buffer() = default;
         ~Buffer() { Destroy(); }
 
+        Buffer(const Buffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
+
+        Buffer(Buffer&& other) noexcept { *this = std::move(other); }
+        Buffer& operator=(Buffer&& other) noexcept {
+            if (this != &other) {
+                Destroy();
+                m_allocation = std::move(other.m_allocation);
+                m_device = other.m_device;
+                m_deviceAddress = other.m_deviceAddress;
+                m_size = other.m_size;
+                m_usageFlags = other.m_usageFlags;
+                other.m_device = VK_NULL_HANDLE;
+                other.m_deviceAddress = 0;
+                other.m_size = 0;
+                other.m_usageFlags = BufferUsageFlag::None;
+            }
+            return *this;
+        }
+
         void Destroy() {
             m_allocation.Destroy(m_device);
             m_size = 0;
         }
+
+        void* GetMappedData() const { return m_allocation.allocationInfo.pMappedData; }
+        VkBuffer GetRaw() const { return m_allocation.buffer; }
 
         BufferSize GetSize() const { return m_size; }
         BufferUsageFlag GetUsageFlags() const { return m_usageFlags; }
@@ -51,10 +65,10 @@ namespace Nova {
 
     private:
         BufferAllocation m_allocation;
-        VkDevice m_device = nullptr;
+        VkDevice m_device = VK_NULL_HANDLE;
         BufferDeviceAddress m_deviceAddress = 0;
         BufferSize m_size = 0;
-        BufferUsageFlag m_usageFlags;
+        BufferUsageFlag m_usageFlags = BufferUsageFlag::None;
 
         friend class Device;
     };

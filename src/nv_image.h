@@ -2,10 +2,12 @@
 
 #include <volk.h>
 #include "nv_allocator.h"
+#include "nv_helpers.h"
 
 namespace Nova {
     class Device;
     class Instance;
+    class Texture;
 
     enum class ImageFormat {
         R8G8B8A8Unorm = VK_FORMAT_R8G8B8A8_UNORM,
@@ -36,22 +38,30 @@ namespace Nova {
         InputAttachment = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
     };
 
-    constexpr ImageUsageFlag operator|(ImageUsageFlag a, ImageUsageFlag b) {
-        return static_cast<ImageUsageFlag>(static_cast<VkImageUsageFlags>(a) | static_cast<VkImageUsageFlags>(b));
-    }
-
-    constexpr ImageUsageFlag operator&(ImageUsageFlag a, ImageUsageFlag b) {
-        return static_cast<ImageUsageFlag>(static_cast<VkImageUsageFlags>(a) & static_cast<VkImageUsageFlags>(b));
-    }
-
-    constexpr ImageUsageFlag operator~(ImageUsageFlag a) {
-        return static_cast<ImageUsageFlag>(~static_cast<VkImageUsageFlags>(a));
-    }
+    ENABLE_BITMASK_OPERATORS(ImageUsageFlag, VkImageUsageFlags)
 
     class Image {
     public:
         Image() = default;
         ~Image() { Destroy(); }
+
+        Image(const Image&) = delete;
+        Image& operator=(const Image&) = delete;
+
+        Image(Image&& other) noexcept { *this = std::move(other); }
+        Image& operator=(Image&& other) noexcept {
+            if (this != &other) {
+                Destroy();
+                m_allocation = std::move(other.m_allocation);
+                m_device = other.m_device;
+                m_imageView = other.m_imageView;
+                m_format = other.m_format;
+                m_extent = other.m_extent;
+                other.m_device = VK_NULL_HANDLE;
+                other.m_imageView = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
 
         void Destroy() {
             if (m_imageView != VK_NULL_HANDLE) {
@@ -74,6 +84,7 @@ namespace Nova {
         VkExtent3D m_extent{1, 1, 1};
 
         friend class ImageBuilder;
+        friend class Texture;
     };
 
     class ImageBuilder {
@@ -99,7 +110,12 @@ namespace Nova {
             return *this;
         }
 
-        Image build(const Instance& instance);
+        ImageBuilder&  SetMipLevels(uint32_t mipLevels) {
+            m_createInfo.mipLevels = mipLevels;
+            return *this;
+        }
+
+        Image build(const Instance& instance, AllocationFlag allocationFlags = AllocationFlag::None);
     private:
         VkImageCreateInfo m_createInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
