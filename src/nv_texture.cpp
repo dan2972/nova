@@ -48,50 +48,38 @@ namespace Nova {
 
         commandBuffer.Begin();
         
-        VkImageMemoryBarrier2 barrier{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .srcAccessMask = VK_ACCESS_2_NONE,
-            .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-            .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .image = img.m_allocation.image,
-            .subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
-        };
-        VkDependencyInfo barrierTexInfo{
-            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .imageMemoryBarrierCount = 1,
-            .pImageMemoryBarriers = &barrier
-        };
+        commandBuffer.TransitionImage(img, {
+            .oldLayout = ImageLayout::Undefined,
+            .newLayout = ImageLayout::TransferDst,
+            .dst = SyncScope::TransferWrite(),
+            .range = ImageSubresourceRange::Color(ktxTexture->numLevels),
+        });
 
-        vkCmdPipelineBarrier2(commandBuffer.GetRaw(), &barrierTexInfo);
-
-        std::vector<VkBufferImageCopy> copyRegions{};
+        std::vector<BufferToImageCopyRegion> copyRegions{};
+        copyRegions.reserve(ktxTexture->numLevels);
         for (auto j = 0; j < ktxTexture->numLevels; j++) {
             ktx_size_t mipOffset{0};
             KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, j, 0, 0, &mipOffset);
+            if (ret != KTX_SUCCESS) {
+                LogError("Failed to obtain mip {} offset for texture: {}", j, filePath);
+                ktxTexture_Destroy(ktxTexture);
+                return Texture();
+            }
             copyRegions.push_back({
                 .bufferOffset = mipOffset,
-                .imageSubresource{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel = (uint32_t)j, .layerCount = 1},
-                .imageExtent{.width = ktxTexture->baseWidth >> j, .height = ktxTexture->baseHeight >> j, .depth = 1 },
+                .mipLevel = static_cast<uint32_t>(j),
+                .extent = { .width = ktxTexture->baseWidth >> j, .height = ktxTexture->baseHeight >> j, .depth = 1 },
             });
         }
-        vkCmdCopyBufferToImage(commandBuffer.GetRaw(), stagingBuffer.GetRaw(), img.m_allocation.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(copyRegions.size()), copyRegions.data());
+        commandBuffer.CopyBufferToImage(stagingBuffer, img, ImageLayout::TransferDst, copyRegions);
 
-        VkImageMemoryBarrier2 barrierTexRead{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-            .srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-            .image = img.m_allocation.image,
-            .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
-        };
-        barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
-        vkCmdPipelineBarrier2(commandBuffer.GetRaw(), &barrierTexInfo);
+        commandBuffer.TransitionImage(img, {
+            .oldLayout = ImageLayout::TransferDst,
+            .newLayout = ImageLayout::ReadOnly,
+            .src = SyncScope::TransferWrite(),
+            .dst = SyncScope::FragmentShaderRead(),
+            .range = ImageSubresourceRange::Color(ktxTexture->numLevels),
+        });
 
         commandBuffer.End();
         device->SubmitCommandBuffer(&commandBuffer, &fence);

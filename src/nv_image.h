@@ -78,6 +78,7 @@ namespace Nova {
         uint32_t GetHeight() const { return m_extent.height; }
         uint32_t GetDepth() const { return m_extent.depth; }
         ImageFormat GetFormat() const { return m_format; }
+        VkImage GetRaw() const { return m_allocation.image; }
 
         ImageView CreateView() const;
         ImageView CreateView(ImageAspectFlag aspectMask) const;

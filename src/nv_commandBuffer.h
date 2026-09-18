@@ -1,8 +1,11 @@
 #pragma once
 
 #include <volk.h>
+#include <span>
 #include <utility>
+#include "nv_buffer.h"
 #include "nv_helpers.h"
+#include "nv_image.h"
 
 namespace Nova {
     class Device;
@@ -24,6 +27,54 @@ namespace Nova {
     };
 
     ENABLE_BITMASK_OPERATORS(CommandBufferBeginFlag, VkCommandBufferUsageFlags)
+
+    enum class ImageLayout {
+        Undefined = VK_IMAGE_LAYOUT_UNDEFINED,
+        TransferDst = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        ReadOnly = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+    };
+
+    struct SyncScope {
+        VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
+        VkAccessFlags2 access = VK_ACCESS_2_NONE;
+
+        static constexpr SyncScope TransferWrite() {
+            return { VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT };
+        }
+
+        static constexpr SyncScope FragmentShaderRead() {
+            return { VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_SAMPLED_READ_BIT };
+        }
+    };
+
+    struct ImageSubresourceRange {
+        ImageAspectFlag aspect = ImageAspectFlag::Color;
+        uint32_t baseMipLevel = 0;
+        uint32_t levelCount = 1;
+        uint32_t baseArrayLayer = 0;
+        uint32_t layerCount = 1;
+
+        static constexpr ImageSubresourceRange Color(uint32_t mipLevels = 1) {
+            return { .levelCount = mipLevels };
+        }
+    };
+
+    struct ImageTransition {
+        ImageLayout oldLayout = ImageLayout::Undefined;
+        ImageLayout newLayout = ImageLayout::Undefined;
+        SyncScope src{};
+        SyncScope dst{};
+        ImageSubresourceRange range{};
+    };
+
+    struct BufferToImageCopyRegion {
+        BufferSize bufferOffset = 0;
+        ImageAspectFlag aspect = ImageAspectFlag::Color;
+        uint32_t mipLevel = 0;
+        uint32_t baseArrayLayer = 0;
+        uint32_t layerCount = 1;
+        VkExtent3D extent{1, 1, 1};
+    };
 
     class CommandPool {
     public:
@@ -101,6 +152,11 @@ namespace Nova {
         void End() {
             CheckVk(vkEndCommandBuffer(m_commandBuffer));
         }
+
+        void TransitionImage(const Image& image, const ImageTransition& transition);
+        void CopyBufferToImage(const Buffer& source, const Image& destination,
+                               ImageLayout destinationLayout,
+                               std::span<const BufferToImageCopyRegion> regions);
 
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
