@@ -89,8 +89,8 @@ namespace Nova {
         return static_cast<AllocationFlag>(~static_cast<uint32_t>(a));
     }
 
-    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
-    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
+    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, const VkImageCreateInfo& imageCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
+    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, const VkBufferCreateInfo& bufferCreateInfo, AllocationFlag flags = AllocationFlag::DedicatedMemory);
 
     void DestroyAllocator();
 }

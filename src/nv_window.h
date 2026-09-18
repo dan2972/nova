@@ -19,7 +19,7 @@ namespace Nova {
         Window(Window&&) = delete;
         Window& operator=(Window&&) = delete;
 
-        const Surface* GetSurface() const { return &m_surface; }
+        const Surface& GetSurface() const { return m_surface; }
 
         glm::ivec2 GetSize() const { return glm::ivec2(m_width, m_height); }
         uint32_t GetWidth() const { return m_width; }

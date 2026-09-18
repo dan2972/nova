@@ -115,7 +115,7 @@ namespace Nova {
 
     class ImageBuilder {
     public:
-        ImageBuilder(const Device* device) : m_device(device) {
+        ImageBuilder(const Device& device) : m_device(&device) {
             m_createInfo.extent = {1, 1, 1};
         }
 

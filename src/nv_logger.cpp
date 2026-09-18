@@ -5,8 +5,8 @@ namespace {
 }
 
 namespace Nova {
-    void SetLogger(LoggerBase* logger) {
-        s_logger.reset(logger);
+    void SetLogger(LoggerBase& logger) {
+        s_logger.reset(&logger);
     }
 
     LoggerBase& GetLogger() {

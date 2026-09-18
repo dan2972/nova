@@ -5,18 +5,8 @@
 #include "nv_commandBuffer.h"
 
 namespace Nova {
-    Texture Texture::CreateFromFile(const std::string &filePath, Device* device, CommandPool* commandPool)
+    Texture Texture::CreateFromFile(const std::string &filePath, const Device& device, const CommandPool& commandPool)
     {
-        if (!device) {
-            LogError("Device pointer is null when creating texture from file: {}", filePath);
-            return Texture();
-        }
-
-        if (!commandPool) {
-            LogError("CommandPool pointer is null when creating texture from file: {}", filePath);
-            return Texture();
-        }
-
         ktxTexture* ktxTexture = nullptr;
         ktxTexture_CreateFromNamedFile(filePath.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
 
@@ -33,18 +23,18 @@ namespace Nova {
             .SetExtent(ktxTexture->baseWidth, ktxTexture->baseHeight, ktxTexture->baseDepth)
             .SetUsage(ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst)
             .SetMipLevels(ktxTexture->numLevels)
-            .build(*device->GetInstance());
+            .build(device.GetInstance());
         
         // temp buffer for uploading texture data
-        Buffer stagingBuffer = device->CreateBuffer(
+        Buffer stagingBuffer = device.CreateBuffer(
             ktxTexture->dataSize, 
             BufferUsageFlag::TransferSrc, 
             AllocationFlag::HostAccessSequentialWrite | AllocationFlag::Mapped);
 
         memcpy(stagingBuffer.GetMappedData(), ktxTexture->pData, ktxTexture->dataSize);
 
-        Fence fence = device->CreateFence();
-        CommandBuffer commandBuffer = device->CreateCommandBuffer(*commandPool);
+        Fence fence = device.CreateFence();
+        CommandBuffer commandBuffer = device.CreateCommandBuffer(commandPool);
 
         commandBuffer.Begin();
         
@@ -82,8 +72,8 @@ namespace Nova {
         });
 
         commandBuffer.End();
-        device->SubmitCommandBuffer(&commandBuffer, &fence);
-        device->WaitForFence(&fence);
+        device.SubmitCommandBuffer(&commandBuffer, &fence);
+        device.WaitForFence(&fence);
 
         VkSampler sampler{};
         VkSamplerCreateInfo samplerCI{
@@ -95,7 +85,7 @@ namespace Nova {
 			.maxAnisotropy = 8.0f,
 			.maxLod = (float)ktxTexture->numLevels,
 		};
-		CheckVk(vkCreateSampler(device->GetRaw(), &samplerCI, nullptr, &sampler));
+		CheckVk(vkCreateSampler(device.GetRaw(), &samplerCI, nullptr, &sampler));
         ktxTexture_Destroy(ktxTexture);
 
         texture.m_image = std::move(img);

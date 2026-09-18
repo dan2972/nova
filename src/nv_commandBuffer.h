@@ -161,7 +161,7 @@ namespace Nova {
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         VkDevice m_device = VK_NULL_HANDLE;
-        CommandPool* m_commandPool = nullptr;
+        const CommandPool* m_commandPool = nullptr;
 
         friend class Device;
     };

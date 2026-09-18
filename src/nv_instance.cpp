@@ -207,7 +207,7 @@ namespace {
 
 namespace Nova {
 
-    Instance::Instance(std::string applicationName)
+    Instance::Instance(const std::string& applicationName)
     {
         Init(applicationName);
     }
@@ -220,7 +220,7 @@ namespace Nova {
         vkDestroyInstance(m_instance, nullptr);
     }
 
-    void Instance::Init(std::string applicationName)
+    void Instance::Init(const std::string& applicationName)
     {
         sCreateInstance(&m_instance, applicationName);
         volkLoadInstance(m_instance);
@@ -264,12 +264,12 @@ namespace Nova {
             });
     }
 
-    const PhysicalDevice* Instance::GetBestPhysicalDevice() const
+    const PhysicalDevice& Instance::GetBestPhysicalDevice() const
     {
         if (m_physicalDevices.empty()) {
             LogError("No GPU found.");
             return nullptr;
         }
-        return &m_physicalDevices[0];
+        return m_physicalDevices[0];
     }
 }

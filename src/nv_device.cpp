@@ -52,18 +52,9 @@ namespace {
 }
 
 namespace Nova {
-    Device::Device(Instance* instance, PhysicalDevice* physicalDevice)
-        : m_instance(instance), m_physicalDevice(physicalDevice)
+    Device::Device(const Instance& instance, const PhysicalDevice& physicalDevice)
+        : m_instance(&instance), m_physicalDevice(&physicalDevice)
     {
-        if (!m_instance) {
-            LogError("Instance is null.");
-            exit(-1);
-        }
-
-        if (!m_physicalDevice) {
-            m_physicalDevice = m_instance->GetBestPhysicalDevice();
-        }
-
         if (m_physicalDevice == nullptr) {
             LogError("No GPU found.");
             exit(-1);
@@ -81,6 +72,12 @@ namespace Nova {
         }
     }
 
+    Device::Device(const Instance& instance)
+        : Device(instance, instance.GetBestPhysicalDevice())
+    {
+
+    }
+
     Device::~Device()
     {
         if (m_device != VK_NULL_HANDLE) {
@@ -96,16 +93,12 @@ namespace Nova {
         return m_physicalDevice->GetSupportedDepthFormats();
     }
 
-    SwapchainBuilder Device::CreateSwapchainBuilder(const Surface* surface)
+    SwapchainBuilder Device::CreateSwapchainBuilder(const Surface& surface)
     {
-        if (surface == nullptr) {
-            LogError("Surface is null. Cannot create swapchain builder.");
-            exit(-1);
-        }
-        return SwapchainBuilder(this, surface);
+        return SwapchainBuilder(*this, surface);
     }
 
-    Buffer Device::CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags)
+    Buffer Device::CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags) const
     {
         VkBufferCreateInfo bufferCreateInfo{
             .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -133,12 +126,12 @@ namespace Nova {
         return buffer;
     }
 
-    ImageBuilder Device::CreateImageBuilder()
+    ImageBuilder Device::CreateImageBuilder() const
     {
-        return ImageBuilder(this);
+        return ImageBuilder(*this);
     }
 
-    Fence Device::CreateFence(bool signaled)
+    Fence Device::CreateFence(bool signaled) const
     {
         VkFenceCreateInfo fenceCreateInfo{
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -152,7 +145,7 @@ namespace Nova {
         return fence;
     }
 
-    Semaphore Device::CreateSemaphore()
+    Semaphore Device::CreateSemaphore() const
     {
         static const VkSemaphoreCreateInfo semaphoreCreateInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
@@ -165,12 +158,12 @@ namespace Nova {
         return semaphore;
     }
 
-    CommandPool Device::CreateCommandPool(CommandPoolCreateFlag flags)
+    CommandPool Device::CreateCommandPool(CommandPoolCreateFlag flags) const
     {
-        return CreateCommandPool(GetPhysicalDevice()->GetGraphicsQueueFamilyIndex(), flags);
+        return CreateCommandPool(GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), flags);
     }
 
-    CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags)
+    CommandPool Device::CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags) const
     {
         VkCommandPoolCreateInfo commandPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -185,7 +178,7 @@ namespace Nova {
         return commandPool;
     }
 
-    CommandBuffer Device::CreateCommandBuffer(CommandPool& commandPool)
+    CommandBuffer Device::CreateCommandBuffer(const CommandPool& commandPool) const
     {
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -202,7 +195,7 @@ namespace Nova {
         return commandBuffer;
     }
 
-    std::vector<CommandBuffer> Device::CreateCommandBuffers(CommandPool &commandPool, size_t count)
+    std::vector<CommandBuffer> Device::CreateCommandBuffers(const CommandPool& commandPool, size_t count) const
     {
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -226,7 +219,7 @@ namespace Nova {
         return novaCommandBuffers;
     }
 
-    void Device::SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence)
+    void Device::SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence) const
     {
         if (commandBuffer == nullptr || commandBuffer->GetRaw() == VK_NULL_HANDLE) {
             LogError("Invalid command buffer.");
@@ -240,11 +233,11 @@ namespace Nova {
         };
 
         VkQueue graphicsQueue;
-        vkGetDeviceQueue(m_device, GetPhysicalDevice()->GetGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
+        vkGetDeviceQueue(m_device, GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
         CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE));
     }
 
-    void Device::WaitForFence(Fence* fence, uint64_t timeout)
+    void Device::WaitForFence(Fence* fence, uint64_t timeout) const
     {
         if (fence == nullptr || fence->fence == VK_NULL_HANDLE) {
             LogError("Invalid fence.");

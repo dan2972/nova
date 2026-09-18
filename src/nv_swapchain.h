@@ -100,7 +100,7 @@ namespace Nova {
 
     class SwapchainBuilder {
     public:
-        SwapchainBuilder(const Device* device, const Surface* surface);
+        SwapchainBuilder(const Device& device, const Surface& surface);
 
         SwapchainBuilder& SetFormat(ImageFormat format) {
             m_createInfo.imageFormat = static_cast<VkFormat>(format);

@@ -2,19 +2,9 @@
 #include "nv_device.h"
 
 namespace Nova {
-    SwapchainBuilder::SwapchainBuilder(const Device* device, const Surface* surface) : m_device(device) {
-        if (!device) {
-            LogError("Device is null. Cannot create swapchain builder.");
-            exit(-1);
-        }
-
-        if (!surface) {
-            LogError("Surface is null. Cannot create swapchain builder.");
-            exit(-1);
-        }
-
-        VkSurfaceCapabilitiesKHR surfaceCaps = device->GetPhysicalDevice()->GetSurfaceCapabilities(*surface);
-        m_createInfo.surface = surface->GetRaw();
+    SwapchainBuilder::SwapchainBuilder(const Device& device, const Surface& surface) : m_device(&device) {
+        VkSurfaceCapabilitiesKHR surfaceCaps = device.GetPhysicalDevice().GetSurfaceCapabilities(surface);
+        m_createInfo.surface = surface.GetRaw();
         m_createInfo.minImageCount = surfaceCaps.minImageCount;
         m_createInfo.imageExtent = surfaceCaps.currentExtent;
     }

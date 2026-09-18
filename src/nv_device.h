@@ -16,7 +16,8 @@
 namespace Nova {
     class Device {
     public:
-        Device(Instance* instance, PhysicalDevice* physicalDevice = nullptr);
+        Device(const Instance& instance);
+        Device(const Instance& instance, const PhysicalDevice& physicalDevice);
         ~Device();
 
         Device(const Device&) = delete;
@@ -26,28 +27,27 @@ namespace Nova {
 
         VkDevice GetRaw() const { return m_device; }
 
-        const Instance* GetInstance() const { return m_instance; }
-        const PhysicalDevice* GetPhysicalDevice() const { return m_physicalDevice; }
+        const Instance& GetInstance() const { return *m_instance; }
+        const PhysicalDevice& GetPhysicalDevice() const { return *m_physicalDevice; }
 
         std::vector<ImageFormat> GetSupportedDepthFormats() const;
+        SwapchainBuilder CreateSwapchainBuilder(const Surface& surface);
 
-        SwapchainBuilder CreateSwapchainBuilder(const Surface* surface);
+        Buffer CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags = AllocationFlag::None) const;
 
-        Buffer CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags = AllocationFlag::HostAccessSequentialWrite | AllocationFlag::HostAccessAllowTransfer | AllocationFlag::Mapped);
+        ImageBuilder CreateImageBuilder() const;
 
-        ImageBuilder CreateImageBuilder();
+        Fence CreateFence(bool signaled = false) const;
+        Semaphore CreateSemaphore() const;
 
-        Fence CreateFence(bool signaled = false);
-        Semaphore CreateSemaphore();
+        CommandPool CreateCommandPool(CommandPoolCreateFlag flags = CommandPoolCreateFlag::None) const;
+        CommandPool CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags = CommandPoolCreateFlag::None) const;
 
-        CommandPool CreateCommandPool(CommandPoolCreateFlag flags = CommandPoolCreateFlag::None);
-        CommandPool CreateCommandPool(uint32_t queueFamilyIndex, CommandPoolCreateFlag flags = CommandPoolCreateFlag::None);
+        CommandBuffer CreateCommandBuffer(const CommandPool& commandPool) const;
+        std::vector<CommandBuffer> CreateCommandBuffers(const CommandPool& commandPool, size_t count) const;
 
-        CommandBuffer CreateCommandBuffer(CommandPool& commandPool);
-        std::vector<CommandBuffer> CreateCommandBuffers(CommandPool& commandPool, size_t count);
-
-        void SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence = nullptr);
-        void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX);
+        void SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence = nullptr) const;
+        void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX) const;
     private:
         const Instance* m_instance;
         const PhysicalDevice* m_physicalDevice;

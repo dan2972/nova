@@ -14,7 +14,7 @@ namespace {
             vkFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
             VmaAllocatorCreateInfo allocatorCI{
                 .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT, 
-                .physicalDevice = device.GetPhysicalDevice()->GetRaw(),
+                .physicalDevice = device.GetPhysicalDevice().GetRaw(),
                 .device = device.GetRaw(),
                 .pVulkanFunctions = &vkFunctions,
                 .instance = instance.GetRaw()
@@ -43,7 +43,7 @@ namespace Nova {
         }
     }
 
-    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, VkImageCreateInfo imageCreateInfo, AllocationFlag flags) {
+    ImageAllocation CreateImageAllocation(const Instance& instance, const Device& device, const VkImageCreateInfo& imageCreateInfo, AllocationFlag flags) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
             .flags = static_cast<uint32_t>(flags),
@@ -54,7 +54,7 @@ namespace Nova {
         return imageAlloc;
     }
 
-    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, VkBufferCreateInfo bufferCreateInfo, AllocationFlag flags) {
+    BufferAllocation CreateBufferAllocation(const Instance& instance, const Device& device, const VkBufferCreateInfo& bufferCreateInfo, AllocationFlag flags) {
         sCheckVmaInitialized(instance, device);
         VmaAllocationCreateInfo allocCI{
             .flags = static_cast<uint32_t>(flags),

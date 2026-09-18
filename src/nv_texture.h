@@ -30,7 +30,7 @@ namespace Nova {
             return *this;
         }
 
-        static Texture CreateFromFile(const std::string& filePath, Device* device, CommandPool* commandPool);
+        static Texture CreateFromFile(const std::string& filePath, const Device& device, const CommandPool& commandPool);
 
         void Destroy() {
             m_image.Destroy();
