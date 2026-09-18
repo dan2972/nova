@@ -47,4 +47,33 @@ namespace Nova {
                 return GPUType::Other;
         }
     }
+
+    std::vector<ImageFormat> PhysicalDevice::GetSupportedDepthFormats() const
+    {
+        static const std::vector<VkFormat> depthFormats = {
+            VK_FORMAT_D32_SFLOAT_S8_UINT,
+            VK_FORMAT_D24_UNORM_S8_UINT
+        };
+
+        std::vector<ImageFormat> supportedDepthFormats;
+        for (const auto& format : depthFormats) {
+            VkFormatProperties2 formatProperties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
+            vkGetPhysicalDeviceFormatProperties2(m_physicalDevice, format, &formatProperties);
+            if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+                supportedDepthFormats.push_back(static_cast<ImageFormat>(format));
+            }
+        }
+        return supportedDepthFormats;
+    }
+
+    const VkSurfaceCapabilitiesKHR PhysicalDevice::GetSurfaceCapabilities(Surface surface) const
+    {
+        if (surface.GetRaw() == VK_NULL_HANDLE) {
+            LogError("Attempted to get surface capabilities with a null surface.");
+            exit(-1);
+        }
+        VkSurfaceCapabilitiesKHR capabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, surface.GetRaw(), &capabilities);
+        return capabilities;
+    }
 }

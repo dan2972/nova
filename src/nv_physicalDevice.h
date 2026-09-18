@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "nv_image.h"
+#include "nv_surface.h"
+
 namespace Nova {
     class PhysicalDevice {
     public:
@@ -26,10 +29,15 @@ namespace Nova {
 
         GPUType VkTypeToNovaType(VkPhysicalDeviceType vkType) const;
         GPUType GetType() const { return m_type; }
+
         std::string GetDeviceName() const { return m_deviceName; }
         size_t GetVRAMSize() const { return m_vramSize; }
         uint32_t GetGraphicsQueueFamilyIndex() const { return m_graphicsQueueFamilyIndex; }
+
         std::vector<VkQueueFamilyProperties> GetQueueFamilies() const { return m_queueFamilies; }
+        std::vector<ImageFormat> GetSupportedDepthFormats() const;
+
+        const VkSurfaceCapabilitiesKHR GetSurfaceCapabilities(Surface surface) const;
 
     private:
         VkPhysicalDevice m_physicalDevice;

@@ -52,8 +52,8 @@ namespace {
 }
 
 namespace Nova {
-    Device::Device(Instance* instance, VkSurfaceKHR surface, PhysicalDevice* physicalDevice)
-        : m_instance(instance), m_surface(surface), m_physicalDevice(physicalDevice)
+    Device::Device(Instance* instance, PhysicalDevice* physicalDevice)
+        : m_instance(instance), m_physicalDevice(physicalDevice)
     {
         if (!m_instance) {
             LogError("Instance is null.");
@@ -70,7 +70,7 @@ namespace Nova {
         }
         
         const PhysicalDevice& selectedDevice = *m_physicalDevice;
-        LogInfo("Selected GPU: {} (type: {}, VRAM: {} MB)",
+        LogInfo("Creating Nova Device with GPU: {} (type: {}, VRAM: {} MB)",
             selectedDevice.GetDeviceName(),
             static_cast<int>(selectedDevice.GetType()),
             selectedDevice.GetVRAMSize() / (1024 * 1024));
@@ -79,11 +79,6 @@ namespace Nova {
         if (!success) {
             LogError("Failed to create logical device.");
         }
-    }
-
-    Device::Device(Instance* instance, Window* window, PhysicalDevice* physicalDevice)
-        : Device(instance, window->GetSurface(), physicalDevice)
-    {
     }
 
     Device::~Device()
@@ -96,32 +91,18 @@ namespace Nova {
         }
     }
 
-    const VkSurfaceCapabilitiesKHR Device::GetSurfaceCapabilities() const {
-        if (m_surface == VK_NULL_HANDLE) {
-            LogError("Surface is not set for the device.");
-            exit(-1);
-        }
-        VkSurfaceCapabilitiesKHR capabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(GetPhysicalDevice()->GetRaw(), m_surface, &capabilities);
-        return capabilities;
-    }
-
     std::vector<ImageFormat> Device::GetSupportedDepthFormats() const
     {
-        static const std::vector<VkFormat> depthFormats = {
-            VK_FORMAT_D32_SFLOAT_S8_UINT,
-            VK_FORMAT_D24_UNORM_S8_UINT
-        };
+        return m_physicalDevice->GetSupportedDepthFormats();
+    }
 
-        std::vector<ImageFormat> supportedDepthFormats;
-        for (const auto& format : depthFormats) {
-            VkFormatProperties2 formatProperties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
-            vkGetPhysicalDeviceFormatProperties2(GetPhysicalDevice()->GetRaw(), format, &formatProperties);
-            if (formatProperties.formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-                supportedDepthFormats.push_back(static_cast<ImageFormat>(format));
-            }
+    SwapchainBuilder Device::CreateSwapchainBuilder(const Surface* surface)
+    {
+        if (surface == nullptr) {
+            LogError("Surface is null. Cannot create swapchain builder.");
+            exit(-1);
         }
-        return supportedDepthFormats;
+        return SwapchainBuilder(this, surface);
     }
 
     Buffer Device::CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags)
@@ -150,6 +131,11 @@ namespace Nova {
         }
 
         return buffer;
+    }
+
+    ImageBuilder Device::CreateImageBuilder()
+    {
+        return ImageBuilder(this);
     }
 
     Fence Device::CreateFence(bool signaled)

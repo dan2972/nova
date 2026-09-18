@@ -20,14 +20,14 @@ namespace Nova {
             exit(-1);
         }
         
-        CheckVk(glfwCreateWindowSurface(m_instance->GetRaw(), m_window, nullptr, &m_surface));
+        CheckVk(glfwCreateWindowSurface(m_instance->GetRaw(), m_window, nullptr, &m_surface.m_surface));
     }
 
     Window::~Window()
     {
-        if (m_surface != VK_NULL_HANDLE) {
-            vkDestroySurfaceKHR(m_instance->GetRaw(), m_surface, nullptr);
-            m_surface = VK_NULL_HANDLE;
+        if (m_surface.m_surface != VK_NULL_HANDLE) {
+            vkDestroySurfaceKHR(m_instance->GetRaw(), m_surface.m_surface, nullptr);
+            m_surface.m_surface = VK_NULL_HANDLE;
         }
 
         if (m_window != nullptr) {

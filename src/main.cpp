@@ -6,18 +6,16 @@
 int main() {
     Nova::Instance instance;
     Nova::Window window(instance, 800, 600, "Nova Engine");
-    Nova::Device device(&instance, &window);
+    Nova::Device device(&instance);
 
-    Nova::SwapchainBuilder swapchainBuilder(&device);
-    Nova::Swapchain swapchain = swapchainBuilder
+    Nova::Swapchain swapchain = device.CreateSwapchainBuilder(window.GetSurface())
         .SetFormat(Nova::ImageFormat::B8G8R8A8Unorm)
         .SetColorSpace(Nova::ColorSpace::SrgbNonlinear)
         .SetPresentMode(Nova::SwapchainPresentMode::Fifo)
         .SetExtent(window.GetWidth(), window.GetHeight())
         .build();
 
-    Nova::ImageBuilder imageBuilder(&device);
-    Nova::Image depthImage = imageBuilder
+    Nova::Image depthImage = device.CreateImageBuilder()
         .SetFormat(device.GetSupportedDepthFormats()[0])
         .SetExtent(window.GetWidth(), window.GetHeight())
         .SetUsage(Nova::ImageUsageFlag::DepthStencilAttachment)

@@ -5,6 +5,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "nv_instance.h"
+#include "nv_surface.h"
 
 namespace Nova {
     class Window {
@@ -18,7 +19,8 @@ namespace Nova {
         Window(Window&&) = delete;
         Window& operator=(Window&&) = delete;
 
-        VkSurfaceKHR GetSurface() const { return m_surface; }
+        const Surface* GetSurface() const { return &m_surface; }
+
         glm::ivec2 GetSize() const { return glm::ivec2(m_width, m_height); }
         uint32_t GetWidth() const { return m_width; }
         uint32_t GetHeight() const { return m_height; }
@@ -27,7 +29,7 @@ namespace Nova {
         uint32_t m_width = 0;
         uint32_t m_height = 0;
         std::string m_title;
-        VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+        Surface m_surface;
         const Instance* m_instance = nullptr;
 
         void Init();
