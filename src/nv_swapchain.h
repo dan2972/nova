@@ -74,7 +74,7 @@ namespace Nova {
         ImageFormat m_format;
         ColorSpace m_colorSpace;
         SwapchainPresentMode m_presentMode;
-        VkExtent2D m_extent;
+        Extent2D m_extent;
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_imageViews;
         const Device* m_device = nullptr;
@@ -101,7 +101,7 @@ namespace Nova {
             return *this;
         }
 
-        SwapchainBuilder& SetExtent(const VkExtent2D& extent) {
+        SwapchainBuilder& SetExtent(const Extent2D& extent) {
             m_createInfo.imageExtent = extent;
             return *this;
         }

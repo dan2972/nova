@@ -51,3 +51,24 @@ static inline bool PlatformDefined(Platform platform) {
             return false;
     }
 }
+
+namespace Nova {
+    struct Extent3D {
+        uint32_t width;
+        uint32_t height;
+        uint32_t depth;
+
+        operator VkExtent3D() const {
+            return VkExtent3D{width, height, depth};
+        }
+    };
+
+    struct Extent2D {
+        uint32_t width;
+        uint32_t height;
+        
+        operator VkExtent2D() const {
+            return VkExtent2D{width, height};
+        }
+    };
+}

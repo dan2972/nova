@@ -4,29 +4,42 @@
 #include "nv_helpers.h"
 
 namespace Nova {
-    Image ImageBuilder::build(const Instance& instance, AllocationFlag allocationFlags) {
-        Image image{};
-        image.m_extent = m_createInfo.extent;
-        image.m_format = static_cast<ImageFormat>(m_createInfo.format);
-        image.m_allocation = CreateImageAllocation(instance, *m_device, m_createInfo, allocationFlags);
-        image.m_device = m_device;
-        image.m_usageFlags = m_createInfo.usage;
-        image.m_mipLevels = m_createInfo.mipLevels;
-        
-        return image;
+    Image::Image(const Device &device, const ImageCreateInfo &createInfo)
+    {
+        VkImageCreateInfo imageCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = VK_IMAGE_TYPE_2D,
+            .format = static_cast<VkFormat>(createInfo.format),
+            .extent = createInfo.extent,
+            .mipLevels = createInfo.mipLevels,
+            .arrayLayers = 1,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = static_cast<VkImageUsageFlags>(createInfo.usage),
+            // .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        };
+
+        m_device = &device;
+        m_extent = createInfo.extent;
+        m_format = createInfo.format;
+        m_allocation = CreateImageAllocation(device.GetInstance(), device, imageCreateInfo, createInfo.allocationFlags);
+        m_usageFlags = createInfo.usage;
+        m_mipLevels = createInfo.mipLevels;
     }
 
     ImageView Image::CreateView() const
     {
         VkImageAspectFlags aspectMask = 0;
-        if (m_usageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+        VkImageUsageFlags usageFlags = static_cast<VkImageUsageFlags>(m_usageFlags);
+        if (usageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
             aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        } else if (m_usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+        } else if (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
             aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
             if (m_format == ImageFormat::D32SfloatS8Uint || m_format == ImageFormat::D24UnormS8Uint) {
                 aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
-        } else if (m_usageFlags & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        } else if (usageFlags & VK_IMAGE_USAGE_SAMPLED_BIT) {
             aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 
@@ -58,7 +71,15 @@ namespace Nova {
 
         ImageView imageView{};
         imageView.m_imageView = vkImageView;
-        imageView.m_device = m_device->GetRaw();
+        imageView.m_device = m_device;
         return imageView;
+    }
+    
+    void ImageView::Destroy()
+    {
+        if (m_imageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(m_device->GetRaw(), m_imageView, nullptr);
+            m_imageView = VK_NULL_HANDLE;
+        }
     }
 }

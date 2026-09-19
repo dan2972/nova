@@ -73,7 +73,7 @@ namespace Nova {
         uint32_t mipLevel = 0;
         uint32_t baseArrayLayer = 0;
         uint32_t layerCount = 1;
-        VkExtent3D extent{1, 1, 1};
+        Extent3D extent{1, 1, 1};
     };
 
     class CommandPool {

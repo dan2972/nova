@@ -126,9 +126,9 @@ namespace Nova {
         return buffer;
     }
 
-    ImageBuilder Device::CreateImageBuilder() const
+    Image Device::CreateImage(const ImageCreateInfo &createInfo) const
     {
-        return ImageBuilder(*this);
+        return Image(*this, createInfo);
     }
 
     Fence Device::CreateFence(bool signaled) const
@@ -257,14 +257,13 @@ namespace Nova {
         }
 
         Texture texture;
-
-        ImageBuilder imageBuilder(*this);
-        Image img = imageBuilder
-            .SetFormat(static_cast<ImageFormat>(ktxTexture_GetVkFormat(ktxTexture)))
-            .SetExtent(ktxTexture->baseWidth, ktxTexture->baseHeight, ktxTexture->baseDepth)
-            .SetUsage(ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst)
-            .SetMipLevels(ktxTexture->numLevels)
-            .build(this->GetInstance());
+        
+        Image img = CreateImage({
+            .format = static_cast<ImageFormat>(ktxTexture_GetVkFormat(ktxTexture)),
+            .extent = { ktxTexture->baseWidth, ktxTexture->baseHeight, ktxTexture->baseDepth },
+            .usage = ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst,
+            .mipLevels = ktxTexture->numLevels
+        });
         
         // temp buffer for uploading texture data
         Buffer stagingBuffer = CreateBuffer(

@@ -14,12 +14,12 @@ int main() {
         .SetPresentMode(Nova::SwapchainPresentMode::Fifo)
         .SetExtent(window.GetWidth(), window.GetHeight())
         .build();
-
-    Nova::Image depthImage = device.CreateImageBuilder()
-        .SetFormat(device.GetSupportedDepthFormats()[0])
-        .SetExtent(window.GetWidth(), window.GetHeight())
-        .SetUsage(Nova::ImageUsageFlag::DepthStencilAttachment)
-        .build(instance, Nova::AllocationFlag::DedicatedMemory);
+        
+    Nova::Image depthImage = device.CreateImage({
+        .format = device.GetSupportedDepthFormats()[0],
+        .extent = { window.GetWidth(), window.GetHeight(), 1 },
+        .usage = Nova::ImageUsageFlag::DepthStencilAttachment
+    });
 
     Nova::ImageView depthImageView = depthImage.CreateView(Nova::ImageAspectFlag::Depth);
 

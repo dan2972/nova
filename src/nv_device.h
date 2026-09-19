@@ -35,8 +35,7 @@ namespace Nova {
         SwapchainBuilder CreateSwapchainBuilder(const Surface& surface);
 
         Buffer CreateBuffer(BufferSize size, BufferUsageFlag usageFlags, AllocationFlag allocationFlags = AllocationFlag::None) const;
-
-        ImageBuilder CreateImageBuilder() const;
+        Image CreateImage(const ImageCreateInfo& createInfo) const;
 
         Fence CreateFence(bool signaled = false) const;
         Semaphore CreateSemaphore() const;

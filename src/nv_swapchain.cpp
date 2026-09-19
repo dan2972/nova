@@ -15,7 +15,7 @@ namespace Nova {
         swapchain.m_format = static_cast<ImageFormat>(m_createInfo.imageFormat);
         swapchain.m_colorSpace = static_cast<ColorSpace>(m_createInfo.imageColorSpace);
         swapchain.m_presentMode = static_cast<SwapchainPresentMode>(m_createInfo.presentMode);
-        swapchain.m_extent = m_createInfo.imageExtent;
+        swapchain.m_extent = {m_createInfo.imageExtent.width, m_createInfo.imageExtent.height};
         VkSwapchainKHR swapchainHandle = VK_NULL_HANDLE;
         CheckVk(vkCreateSwapchainKHR(m_device->GetRaw(), &m_createInfo, nullptr, &swapchainHandle));
         swapchain.m_swapchain = swapchainHandle;

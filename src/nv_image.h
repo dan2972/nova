@@ -49,9 +49,18 @@ namespace Nova {
         Metadata = VK_IMAGE_ASPECT_METADATA_BIT
     };
 
+    struct ImageCreateInfo {
+        ImageFormat format = ImageFormat::R8G8B8A8Unorm;
+        Extent3D extent{1, 1, 1};
+        uint32_t mipLevels = 1;
+        ImageUsageFlag usage = ImageUsageFlag::ColorAttachment;
+        AllocationFlag allocationFlags = AllocationFlag::None;
+    };
+
     class Image {
     public:
         Image() = default;
+        Image(const Device& device, const ImageCreateInfo& createInfo);
         ~Image() { Destroy(); }
 
         Image(const Image&) = delete;
@@ -89,8 +98,8 @@ namespace Nova {
         ImageAllocation m_allocation;
         const Device* m_device = nullptr;
         ImageFormat m_format = ImageFormat::R8G8B8A8Unorm;
-        VkExtent3D m_extent{1, 1, 1};
-        VkImageUsageFlags m_usageFlags = 0;
+        Extent3D m_extent{1, 1, 1};
+        ImageUsageFlag m_usageFlags = ImageUsageFlag::None;
         uint32_t m_mipLevels = 1;
 
         friend class ImageBuilder;
@@ -102,60 +111,11 @@ namespace Nova {
         ImageView() = default;
         ~ImageView() { Destroy(); }
 
-        void Destroy() {
-            if (m_imageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(m_device, m_imageView, nullptr);
-                m_imageView = VK_NULL_HANDLE;
-            }
-        }
+        void Destroy();
     private:
         VkImageView m_imageView = VK_NULL_HANDLE;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device = nullptr;
 
         friend class Image;
-    };
-
-    class ImageBuilder {
-    public:
-        ImageBuilder(const Device& device) : m_device(&device) {
-            m_createInfo.extent = {1, 1, 1};
-        }
-
-        ImageBuilder& SetFormat(ImageFormat format) {
-            m_createInfo.format = static_cast<VkFormat>(format);
-            return *this;
-        }
-
-        ImageBuilder& SetExtent(uint32_t width, uint32_t height, uint32_t depth = 1) {
-            m_createInfo.extent.width = width;
-            m_createInfo.extent.height = height;
-            m_createInfo.extent.depth = depth;
-            return *this;
-        }
-
-        ImageBuilder& SetUsage(ImageUsageFlag usage) {
-            m_createInfo.usage = static_cast<VkImageUsageFlags>(usage);
-            return *this;
-        }
-
-        ImageBuilder&  SetMipLevels(uint32_t mipLevels) {
-            m_createInfo.mipLevels = mipLevels;
-            return *this;
-        }
-
-        Image build(const Instance& instance, AllocationFlag allocationFlags = AllocationFlag::None);
-    private:
-        VkImageCreateInfo m_createInfo{
-            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-            .imageType = VK_IMAGE_TYPE_2D,
-            .format = VK_FORMAT_B8G8R8A8_SRGB,
-            .mipLevels = 1,
-            .arrayLayers = 1,
-            .samples = VK_SAMPLE_COUNT_1_BIT,
-            .tiling = VK_IMAGE_TILING_OPTIMAL,
-            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-            .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        };
-        const Device* m_device = nullptr;
     };
 }
