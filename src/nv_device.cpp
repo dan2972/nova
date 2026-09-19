@@ -245,4 +245,94 @@ namespace Nova {
         }
         CheckVk(vkWaitForFences(m_device, 1, &fence->fence, VK_TRUE, timeout));
     }
+
+    Texture Device::CreateFromFile(const std::string &filePath, const CommandPool &commandPool)
+    {
+        ktxTexture* ktxTexture = nullptr;
+        ktxTexture_CreateFromNamedFile(filePath.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
+
+        if (!ktxTexture) {
+            LogError("Failed to load texture from file: {}", filePath);
+            return Texture();
+        }
+
+        Texture texture;
+
+        ImageBuilder imageBuilder(*this);
+        Image img = imageBuilder
+            .SetFormat(static_cast<ImageFormat>(ktxTexture_GetVkFormat(ktxTexture)))
+            .SetExtent(ktxTexture->baseWidth, ktxTexture->baseHeight, ktxTexture->baseDepth)
+            .SetUsage(ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst)
+            .SetMipLevels(ktxTexture->numLevels)
+            .build(this->GetInstance());
+        
+        // temp buffer for uploading texture data
+        Buffer stagingBuffer = CreateBuffer(
+            ktxTexture->dataSize, 
+            BufferUsageFlag::TransferSrc, 
+            AllocationFlag::HostAccessSequentialWrite | AllocationFlag::Mapped);
+
+        memcpy(stagingBuffer.GetMappedData(), ktxTexture->pData, ktxTexture->dataSize);
+
+        Fence fence = CreateFence();
+        CommandBuffer commandBuffer = CreateCommandBuffer(commandPool);
+
+        commandBuffer.Begin();
+        
+        commandBuffer.TransitionImage(img, {
+            .oldLayout = ImageLayout::Undefined,
+            .newLayout = ImageLayout::TransferDst,
+            .dst = SyncScope::TransferWrite(),
+            .range = ImageSubresourceRange::Color(ktxTexture->numLevels),
+        });
+
+        std::vector<BufferToImageCopyRegion> copyRegions{};
+        copyRegions.reserve(ktxTexture->numLevels);
+        for (auto j = 0; j < ktxTexture->numLevels; j++) {
+            ktx_size_t mipOffset{0};
+            KTX_error_code ret = ktxTexture_GetImageOffset(ktxTexture, j, 0, 0, &mipOffset);
+            if (ret != KTX_SUCCESS) {
+                LogError("Failed to obtain mip {} offset for texture: {}", j, filePath);
+                ktxTexture_Destroy(ktxTexture);
+                return Texture();
+            }
+            copyRegions.push_back({
+                .bufferOffset = mipOffset,
+                .mipLevel = static_cast<uint32_t>(j),
+                .extent = { .width = ktxTexture->baseWidth >> j, .height = ktxTexture->baseHeight >> j, .depth = 1 },
+            });
+        }
+        commandBuffer.CopyBufferToImage(stagingBuffer, img, ImageLayout::TransferDst, copyRegions);
+
+        commandBuffer.TransitionImage(img, {
+            .oldLayout = ImageLayout::TransferDst,
+            .newLayout = ImageLayout::ReadOnly,
+            .src = SyncScope::TransferWrite(),
+            .dst = SyncScope::FragmentShaderRead(),
+            .range = ImageSubresourceRange::Color(ktxTexture->numLevels),
+        });
+
+        commandBuffer.End();
+        SubmitCommandBuffer(&commandBuffer, &fence);
+        WaitForFence(&fence);
+        
+        ktxTexture_Destroy(ktxTexture);
+
+        texture.m_image = std::move(img);
+
+        texture.m_device = this;
+        texture.isArray = ktxTexture->isArray;
+        texture.isCubemap = ktxTexture->isCubemap;
+        texture.isCompressed = ktxTexture->isCompressed;
+        texture.generateMipmaps = ktxTexture->generateMipmaps;
+        texture.baseWidth = ktxTexture->baseWidth;
+        texture.baseHeight = ktxTexture->baseHeight;
+        texture.baseDepth = ktxTexture->baseDepth;
+        texture.numDimensions = ktxTexture->numDimensions;
+        texture.numLevels = ktxTexture->numLevels;
+        texture.numLayers = ktxTexture->numLayers;
+        texture.numFaces = ktxTexture->numFaces;
+
+        return texture;
+    }
 }

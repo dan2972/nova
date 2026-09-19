@@ -65,6 +65,8 @@ namespace Nova {
                 m_device = other.m_device;
                 m_format = other.m_format;
                 m_extent = other.m_extent;
+                m_usageFlags = other.m_usageFlags;
+                m_mipLevels = other.m_mipLevels;
                 other.m_device = VK_NULL_HANDLE;
             }
             return *this;

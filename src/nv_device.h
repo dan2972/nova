@@ -12,6 +12,7 @@
 #include "nv_allocator.h"
 #include "nv_synchronization.h"
 #include "nv_commandBuffer.h"
+#include "nv_texture.h"
 
 namespace Nova {
     class Device {
@@ -48,6 +49,8 @@ namespace Nova {
 
         void SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence = nullptr) const;
         void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX) const;
+
+        Texture CreateFromFile(const std::string& filePath, const CommandPool& commandPool);
     private:
         const Instance* m_instance;
         const PhysicalDevice* m_physicalDevice;

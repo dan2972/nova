@@ -35,6 +35,8 @@ int main() {
     Nova::CommandPool commandPool = device.CreateCommandPool();
     Nova::CommandBuffer commandBuffer = device.CreateCommandBuffer(commandPool);
 
-    Nova::Texture texture = Nova::Texture::CreateFromFile("res/test1.ktx", device, commandPool);
+    Nova::Texture texture = device.CreateFromFile("res/test1.ktx", commandPool);
+    Nova::Sampler sampler = texture.CreateLinearSampler();
+    Nova::ImageView textureView = texture.CreateView();
     return 0;
 }
