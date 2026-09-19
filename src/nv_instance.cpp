@@ -266,10 +266,6 @@ namespace Nova {
 
     const PhysicalDevice& Instance::GetBestPhysicalDevice() const
     {
-        if (m_physicalDevices.empty()) {
-            LogError("No GPU found.");
-            return nullptr;
-        }
         return m_physicalDevices[0];
     }
 }
