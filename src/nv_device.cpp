@@ -112,7 +112,7 @@ namespace Nova {
         buffer.m_allocation = std::move(allocation);
         buffer.m_size = size;
         buffer.m_usageFlags = usageFlags;
-        buffer.m_device = m_device;
+        buffer.m_device = this;
 
         if ((usageFlags & BufferUsageFlag::ShaderDeviceAddress) != BufferUsageFlag::None) {
             VkBufferDeviceAddressInfo bufferDeviceAddressInfo{
@@ -139,8 +139,8 @@ namespace Nova {
         };
 
         Fence fence{};
-        fence.device = m_device;
-        CheckVk(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence.fence));
+        fence.m_device = this;
+        CheckVk(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &fence.m_fence));
 
         return fence;
     }
@@ -152,8 +152,8 @@ namespace Nova {
         };
 
         Semaphore semaphore{};
-        semaphore.device = m_device;
-        CheckVk(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore.semaphore));
+        semaphore.m_device = this;
+        CheckVk(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &semaphore.m_semaphore));
 
         return semaphore;
     }
@@ -172,7 +172,7 @@ namespace Nova {
         };
 
         CommandPool commandPool{};
-        commandPool.m_device = m_device;
+        commandPool.m_device = this;
         CheckVk(vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &commandPool.m_commandPool));
 
         return commandPool;
@@ -188,7 +188,7 @@ namespace Nova {
         };
 
         CommandBuffer commandBuffer{};
-        commandBuffer.m_device = m_device;
+        commandBuffer.m_device = this;
         commandBuffer.m_commandPool = &commandPool;
         CheckVk(vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &commandBuffer.m_commandBuffer));
 
@@ -211,7 +211,7 @@ namespace Nova {
         novaCommandBuffers.reserve(count);
         for (size_t i = 0; i < count; ++i) {
             CommandBuffer novaCommandBuffer{};
-            novaCommandBuffer.m_device = m_device;
+            novaCommandBuffer.m_device = this;
             novaCommandBuffer.m_commandPool = &commandPool;
             novaCommandBuffer.m_commandBuffer = commandBuffers[i];
             novaCommandBuffers.push_back(std::move(novaCommandBuffer));
@@ -234,16 +234,16 @@ namespace Nova {
 
         VkQueue graphicsQueue;
         vkGetDeviceQueue(m_device, GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
-        CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->fence : VK_NULL_HANDLE));
+        CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->m_fence : VK_NULL_HANDLE));
     }
 
     void Device::WaitForFence(Fence* fence, uint64_t timeout) const
     {
-        if (fence == nullptr || fence->fence == VK_NULL_HANDLE) {
+        if (fence == nullptr || fence->m_fence == VK_NULL_HANDLE) {
             LogError("Invalid fence.");
             return;
         }
-        CheckVk(vkWaitForFences(m_device, 1, &fence->fence, VK_TRUE, timeout));
+        CheckVk(vkWaitForFences(m_device, 1, &fence->m_fence, VK_TRUE, timeout));
     }
 
     Texture Device::CreateFromFile(const std::string &filePath, const CommandPool &commandPool)

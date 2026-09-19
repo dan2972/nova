@@ -91,21 +91,16 @@ namespace Nova {
                 m_commandPool = other.m_commandPool;
                 m_device = other.m_device;
                 other.m_commandPool = VK_NULL_HANDLE;
-                other.m_device = VK_NULL_HANDLE;
+                other.m_device = nullptr;
             }
             return *this;
         }
 
         VkCommandPool GetRaw() const { return m_commandPool; }
-        void Destroy() {
-            if (m_commandPool != VK_NULL_HANDLE) {
-                vkDestroyCommandPool(m_device, m_commandPool, nullptr);
-                m_commandPool = VK_NULL_HANDLE;
-            }
-        }
+        void Destroy();
     private:
         VkCommandPool m_commandPool = VK_NULL_HANDLE;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device = nullptr;
 
         friend class Device;
         friend class CommandBuffer;
@@ -127,19 +122,14 @@ namespace Nova {
                 m_device = other.m_device;
                 m_commandPool = other.m_commandPool;
                 other.m_commandBuffer = VK_NULL_HANDLE;
-                other.m_device = VK_NULL_HANDLE;
-                other.m_commandPool = VK_NULL_HANDLE;
+                other.m_device = nullptr;
+                other.m_commandPool = nullptr;
             }
             return *this;
         }
 
         VkCommandBuffer GetRaw() const { return m_commandBuffer; }
-        void Destroy() {
-            if (m_commandBuffer != VK_NULL_HANDLE && m_commandPool != nullptr) {
-                vkFreeCommandBuffers(m_device, m_commandPool->GetRaw(), 1, &m_commandBuffer);
-                m_commandBuffer = VK_NULL_HANDLE;
-            }
-        }
+        void Destroy();
 
         void Begin(CommandBufferBeginFlag flags = CommandBufferBeginFlag::None) {
             VkCommandBufferBeginInfo beginInfo{
@@ -160,7 +150,7 @@ namespace Nova {
 
     private:
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device = nullptr;
         const CommandPool* m_commandPool = nullptr;
 
         friend class Device;

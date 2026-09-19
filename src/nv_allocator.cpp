@@ -27,7 +27,7 @@ namespace {
 
 namespace Nova {
 
-    void BufferAllocation::Destroy(VkDevice device) {
+    void BufferAllocation::Destroy() {
         if (allocation != VK_NULL_HANDLE) {
             vmaDestroyBuffer(s_allocator, buffer, allocation);
             allocation = VK_NULL_HANDLE;
@@ -35,7 +35,7 @@ namespace Nova {
         }
     }
 
-    void ImageAllocation::Destroy(VkDevice device) {
+    void ImageAllocation::Destroy() {
         if (allocation != VK_NULL_HANDLE) {
             vmaDestroyImage(s_allocator, image, allocation);
             allocation = VK_NULL_HANDLE;

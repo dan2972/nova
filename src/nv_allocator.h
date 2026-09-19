@@ -31,7 +31,7 @@ namespace Nova {
             return *this;
         }
 
-        void Destroy(VkDevice device);
+        void Destroy();
     };
 
     struct ImageAllocation {
@@ -53,7 +53,7 @@ namespace Nova {
             return *this;
         }
 
-        void Destroy(VkDevice device);
+        void Destroy();
     };
 
     enum AllocationFlag : uint32_t {

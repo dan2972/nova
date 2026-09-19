@@ -11,7 +11,7 @@ namespace Nova {
 
     Swapchain SwapchainBuilder::build() {
         Swapchain swapchain;
-        swapchain.m_device = m_device->GetRaw();
+        swapchain.m_device = m_device;
         swapchain.m_format = static_cast<ImageFormat>(m_createInfo.imageFormat);
         swapchain.m_colorSpace = static_cast<ColorSpace>(m_createInfo.imageColorSpace);
         swapchain.m_presentMode = static_cast<SwapchainPresentMode>(m_createInfo.presentMode);
@@ -40,5 +40,24 @@ namespace Nova {
             CheckVk(vkCreateImageView(m_device->GetRaw(), &viewCreateInfo, nullptr, &swapchain.m_imageViews[i]));
         }
         return swapchain;
+    }
+
+    void Swapchain::Destroy()
+    {
+        if (m_device == nullptr) return;
+
+        for (VkImageView imageView : m_imageViews) {
+            if (imageView != VK_NULL_HANDLE) {
+                vkDestroyImageView(m_device->GetRaw(), imageView, nullptr);
+            }
+        }
+        m_imageViews.clear();
+        m_images.clear();
+
+        if (m_swapchain != VK_NULL_HANDLE) {
+            vkDestroySwapchainKHR(m_device->GetRaw(), m_swapchain, nullptr);
+            m_swapchain = VK_NULL_HANDLE;
+        }
+        m_device = nullptr;
     }
 }

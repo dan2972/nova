@@ -9,7 +9,7 @@ namespace Nova {
         image.m_extent = m_createInfo.extent;
         image.m_format = static_cast<ImageFormat>(m_createInfo.format);
         image.m_allocation = CreateImageAllocation(instance, *m_device, m_createInfo, allocationFlags);
-        image.m_device = m_device->GetRaw();
+        image.m_device = m_device;
         image.m_usageFlags = m_createInfo.usage;
         image.m_mipLevels = m_createInfo.mipLevels;
         
@@ -54,11 +54,11 @@ namespace Nova {
                 .layerCount = 1
             }
         };
-        CheckVk(vkCreateImageView(m_device, &viewCreateInfo, nullptr, &vkImageView));
+        CheckVk(vkCreateImageView(m_device->GetRaw(), &viewCreateInfo, nullptr, &vkImageView));
 
         ImageView imageView{};
         imageView.m_imageView = vkImageView;
-        imageView.m_device = m_device;
+        imageView.m_device = m_device->GetRaw();
         return imageView;
     }
 }

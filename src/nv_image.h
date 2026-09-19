@@ -67,13 +67,13 @@ namespace Nova {
                 m_extent = other.m_extent;
                 m_usageFlags = other.m_usageFlags;
                 m_mipLevels = other.m_mipLevels;
-                other.m_device = VK_NULL_HANDLE;
+                other.m_device = nullptr;
             }
             return *this;
         }
 
         void Destroy() {
-            m_allocation.Destroy(m_device);
+            m_allocation.Destroy();
         }
 
         uint32_t GetWidth() const { return m_extent.width; }
@@ -87,7 +87,7 @@ namespace Nova {
 
     private:
         ImageAllocation m_allocation;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device = nullptr;
         ImageFormat m_format = ImageFormat::R8G8B8A8Unorm;
         VkExtent3D m_extent{1, 1, 1};
         VkImageUsageFlags m_usageFlags = 0;

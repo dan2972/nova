@@ -1,0 +1,19 @@
+#include "nv_synchronization.h"
+
+#include "nv_device.h"
+
+namespace Nova {
+    void Fence::Destroy() {
+        if (m_fence != VK_NULL_HANDLE) {
+            vkDestroyFence(m_device->GetRaw(), m_fence, nullptr);
+            m_fence = VK_NULL_HANDLE;
+        }
+    }
+
+    void Semaphore::Destroy() {
+        if (m_semaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(m_device->GetRaw(), m_semaphore, nullptr);
+            m_semaphore = VK_NULL_HANDLE;
+        }
+    }
+}

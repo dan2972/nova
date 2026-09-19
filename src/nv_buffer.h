@@ -43,7 +43,7 @@ namespace Nova {
                 m_deviceAddress = other.m_deviceAddress;
                 m_size = other.m_size;
                 m_usageFlags = other.m_usageFlags;
-                other.m_device = VK_NULL_HANDLE;
+                other.m_device = nullptr;
                 other.m_deviceAddress = 0;
                 other.m_size = 0;
                 other.m_usageFlags = BufferUsageFlag::None;
@@ -52,7 +52,7 @@ namespace Nova {
         }
 
         void Destroy() {
-            m_allocation.Destroy(m_device);
+            m_allocation.Destroy();
             m_size = 0;
         }
 
@@ -65,7 +65,7 @@ namespace Nova {
 
     private:
         BufferAllocation m_allocation;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device;
         BufferDeviceAddress m_deviceAddress = 0;
         BufferSize m_size = 0;
         BufferUsageFlag m_usageFlags = BufferUsageFlag::None;

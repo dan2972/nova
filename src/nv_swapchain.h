@@ -52,29 +52,13 @@ namespace Nova {
                 m_extent = other.m_extent;
                 m_images = std::move(other.m_images);
                 m_imageViews = std::move(other.m_imageViews);
-                other.m_device = VK_NULL_HANDLE;
+                other.m_device = nullptr;
                 other.m_swapchain = VK_NULL_HANDLE;
             }
             return *this;
         }
 
-        void Destroy() {
-            if (m_device == VK_NULL_HANDLE) return;
-
-            for (VkImageView imageView : m_imageViews) {
-                if (imageView != VK_NULL_HANDLE) {
-                    vkDestroyImageView(m_device, imageView, nullptr);
-                }
-            }
-            m_imageViews.clear();
-            m_images.clear();
-
-            if (m_swapchain != VK_NULL_HANDLE) {
-                vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
-                m_swapchain = VK_NULL_HANDLE;
-            }
-            m_device = VK_NULL_HANDLE;
-        }
+        void Destroy();
 
         VkSwapchainKHR GetRaw() const { return m_swapchain; }
         ImageFormat GetFormat() const { return m_format; }
@@ -93,7 +77,7 @@ namespace Nova {
         VkExtent2D m_extent;
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_imageViews;
-        VkDevice m_device = VK_NULL_HANDLE;
+        const Device* m_device = nullptr;
 
         friend class SwapchainBuilder;
     };
