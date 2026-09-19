@@ -86,28 +86,16 @@ namespace Nova {
     public:
         SwapchainBuilder(const Device& device, const Surface& surface);
 
-        SwapchainBuilder& SetFormat(ImageFormat format) {
-            m_createInfo.imageFormat = static_cast<VkFormat>(format);
-            return *this;
-        }
+        SwapchainBuilder& SetDesiredFormat(ImageFormat format);
 
-        SwapchainBuilder& SetColorSpace(ColorSpace colorSpace) {
-            m_createInfo.imageColorSpace = static_cast<VkColorSpaceKHR>(colorSpace);
-            return *this;
-        }
+        SwapchainBuilder& SetDesiredColorSpace(ColorSpace colorSpace);
 
-        SwapchainBuilder& SetPresentMode(SwapchainPresentMode presentMode) {
-            m_createInfo.presentMode = static_cast<VkPresentModeKHR>(presentMode);
-            return *this;
-        }
+        SwapchainBuilder& SetDesiredPresentMode(SwapchainPresentMode presentMode);
 
-        SwapchainBuilder& SetExtent(const Extent2D& extent) {
-            m_createInfo.imageExtent = extent;
-            return *this;
-        }
+        SwapchainBuilder& SetDesiredExtent(const Extent2D& extent);
 
-        SwapchainBuilder& SetExtent(uint32_t width, uint32_t height) {
-            m_createInfo.imageExtent = {width, height};
+        SwapchainBuilder& SetDesiredExtent(uint32_t width, uint32_t height) {
+            SetDesiredExtent(Extent2D{width, height});
             return *this;
         }
 
@@ -124,5 +112,6 @@ namespace Nova {
             .presentMode = VK_PRESENT_MODE_FIFO_KHR,
         };
         const Device* m_device;
+        const Surface* m_surface;
     };
 }

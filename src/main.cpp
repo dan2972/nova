@@ -9,12 +9,12 @@ int main() {
     Nova::Device device(instance);
 
     Nova::Swapchain swapchain = device.CreateSwapchainBuilder(window.GetSurface())
-        .SetFormat(Nova::ImageFormat::B8G8R8A8Unorm)
-        .SetColorSpace(Nova::ColorSpace::SrgbNonlinear)
-        .SetPresentMode(Nova::SwapchainPresentMode::Fifo)
-        .SetExtent(window.GetWidth(), window.GetHeight())
+        .SetDesiredFormat(Nova::ImageFormat::B8G8R8A8Unorm)
+        .SetDesiredColorSpace(Nova::ColorSpace::SrgbNonlinear)
+        .SetDesiredPresentMode(Nova::SwapchainPresentMode::Fifo)
+        .SetDesiredExtent(window.GetSize())
         .build();
-        
+
     Nova::Image depthImage = device.CreateImage({
         .format = device.GetSupportedDepthFormats()[0],
         .extent = { window.GetWidth(), window.GetHeight(), 1 },

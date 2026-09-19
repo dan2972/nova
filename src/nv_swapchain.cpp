@@ -2,11 +2,78 @@
 #include "nv_device.h"
 
 namespace Nova {
-    SwapchainBuilder::SwapchainBuilder(const Device& device, const Surface& surface) : m_device(&device) {
+    SwapchainBuilder::SwapchainBuilder(const Device& device, const Surface& surface) : m_device(&device), m_surface(&surface) {
         VkSurfaceCapabilitiesKHR surfaceCaps = device.GetPhysicalDevice().GetSurfaceCapabilities(surface);
         m_createInfo.surface = surface.GetRaw();
         m_createInfo.minImageCount = surfaceCaps.minImageCount;
         m_createInfo.imageExtent = surfaceCaps.currentExtent;
+    }
+
+    SwapchainBuilder &SwapchainBuilder::SetDesiredFormat(ImageFormat format)
+    {
+        // Check if the format is supported
+        uint32_t formatCount = 0;
+        CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->GetPhysicalDevice().GetRaw(), m_createInfo.surface, &formatCount, nullptr));
+        std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
+        CheckVk(vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->GetPhysicalDevice().GetRaw(), m_createInfo.surface, &formatCount, surfaceFormats.data()));
+        for (const auto& surfaceFormat : surfaceFormats) {
+            if (surfaceFormat.format == static_cast<VkFormat>(format)) {
+                m_createInfo.imageFormat = static_cast<VkFormat>(format);
+                break;
+            }
+        }
+        // If the format is not supported, fallback to B8G8R8A8 SRGB
+        if (m_createInfo.imageFormat != static_cast<VkFormat>(format)) {
+            m_createInfo.imageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+        }
+        return *this;
+    }
+
+    SwapchainBuilder &SwapchainBuilder::SetDesiredColorSpace(ColorSpace colorSpace)
+    {
+        // Check if the color space is supported
+        VkSurfaceCapabilitiesKHR surfaceCaps = m_device->GetPhysicalDevice().GetSurfaceCapabilities(*m_surface);
+        if (surfaceCaps.supportedCompositeAlpha & static_cast<VkCompositeAlphaFlagBitsKHR>(colorSpace)) {
+            m_createInfo.imageColorSpace = static_cast<VkColorSpaceKHR>(colorSpace);
+        } else {
+            // Fallback to SRGB Nonlinear if the requested color space is not supported
+            m_createInfo.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        }
+        return *this;
+    }
+
+    SwapchainBuilder &SwapchainBuilder::SetDesiredPresentMode(SwapchainPresentMode presentMode)
+    {
+        // Check if the present mode is supported
+        uint32_t presentModeCount = 0;
+        CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->GetPhysicalDevice().GetRaw(), m_createInfo.surface, &presentModeCount, nullptr));
+        std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+        CheckVk(vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->GetPhysicalDevice().GetRaw(), m_createInfo.surface, &presentModeCount, presentModes.data()));
+        for (const auto& mode : presentModes) {
+            if (mode == static_cast<VkPresentModeKHR>(presentMode)) {
+                m_createInfo.presentMode = mode;
+                break;
+            }
+        }
+        // Fallback to FIFO if the requested present mode is not supported
+        if (m_createInfo.presentMode != static_cast<VkPresentModeKHR>(presentMode)) {
+            m_createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        }
+        return *this;
+    }
+
+    SwapchainBuilder &SwapchainBuilder::SetDesiredExtent(const Extent2D &extent)
+    {
+        // Check if the extent is within the supported range
+        VkSurfaceCapabilitiesKHR surfaceCaps = m_device->GetPhysicalDevice().GetSurfaceCapabilities(*m_surface);
+        if (extent.width >= surfaceCaps.minImageExtent.width && extent.width <= surfaceCaps.maxImageExtent.width &&
+            extent.height >= surfaceCaps.minImageExtent.height && extent.height <= surfaceCaps.maxImageExtent.height) {
+            m_createInfo.imageExtent = extent;
+        } else {
+            // Fallback to the current extent if the requested extent is not supported
+            m_createInfo.imageExtent = surfaceCaps.currentExtent;
+        }
+        return *this;
     }
 
     Swapchain SwapchainBuilder::build() {
