@@ -111,7 +111,23 @@ namespace Nova {
         ImageView() = default;
         ~ImageView() { Destroy(); }
 
+        ImageView(const ImageView&) = delete;
+        ImageView& operator=(const ImageView&) = delete;
+
+        ImageView(ImageView&& other) noexcept { *this = std::move(other); }
+        ImageView& operator=(ImageView&& other) noexcept {
+            if (this != &other) {
+                Destroy();
+                m_imageView = other.m_imageView;
+                m_device = other.m_device;
+                other.m_imageView = VK_NULL_HANDLE;
+                other.m_device = nullptr;
+            }
+            return *this;
+        }
+
         void Destroy();
+        VkImageView GetRaw() const { return m_imageView; }
     private:
         VkImageView m_imageView = VK_NULL_HANDLE;
         const Device* m_device = nullptr;

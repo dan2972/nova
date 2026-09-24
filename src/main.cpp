@@ -38,5 +38,9 @@ int main() {
     Nova::Texture texture = device.CreateFromFile("res/test1.ktx", commandPool);
     Nova::Sampler sampler = texture.CreateLinearSampler();
     Nova::ImageView textureView = texture.CreateView();
+
+    Nova::BindlessTextureDescriptors bindlessTextureDescriptors = device.CreateBindlessTextureDescriptors({
+        { &textureView, &sampler }
+    });
     return 0;
 }

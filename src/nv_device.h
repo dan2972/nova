@@ -13,6 +13,7 @@
 #include "nv_synchronization.h"
 #include "nv_commandBuffer.h"
 #include "nv_texture.h"
+#include "nv_descriptors.h"
 
 namespace Nova {
     class Device {
@@ -50,6 +51,8 @@ namespace Nova {
         void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX) const;
 
         Texture CreateFromFile(const std::string& filePath, const CommandPool& commandPool);
+
+        BindlessTextureDescriptors CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor>& textureDescriptors) const;
     private:
         const Instance* m_instance;
         const PhysicalDevice* m_physicalDevice;

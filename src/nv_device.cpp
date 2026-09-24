@@ -5,8 +5,39 @@
 #include "nv_logger.h"
 
 namespace {
+    bool sSupportsRequiredFeatures(const Nova::PhysicalDevice& physicalDevice)
+    {
+        VkPhysicalDeviceVulkan12Features vk12Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        };
+        VkPhysicalDeviceVulkan13Features vk13Features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+            .pNext = &vk12Features,
+        };
+        VkPhysicalDeviceFeatures2 features{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            .pNext = &vk13Features,
+        };
+        vkGetPhysicalDeviceFeatures2(physicalDevice.GetRaw(), &features);
+
+        return features.features.samplerAnisotropy &&
+               vk12Features.descriptorIndexing &&
+               vk12Features.shaderSampledImageArrayNonUniformIndexing &&
+               vk12Features.descriptorBindingVariableDescriptorCount &&
+               vk12Features.runtimeDescriptorArray &&
+               vk12Features.bufferDeviceAddress &&
+               vk13Features.synchronization2 &&
+               vk13Features.dynamicRendering;
+    }
+
     bool sCreateLogicalDevice(const Nova::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, VkDevice& device)
     {
+        if (!sSupportsRequiredFeatures(physicalDevice)) {
+            Nova::LogError("GPU '{}' does not support Nova's required bindless Vulkan features.",
+                           physicalDevice.GetDeviceName());
+            return false;
+        }
+
         const float qfPriority = 1.0f;
         VkDeviceQueueCreateInfo queueCreateInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -69,6 +100,7 @@ namespace Nova {
         bool success = sCreateLogicalDevice(selectedDevice, selectedDevice.GetGraphicsQueueFamilyIndex(), m_device);
         if (!success) {
             LogError("Failed to create logical device.");
+            exit(-1);
         }
     }
 
@@ -333,5 +365,10 @@ namespace Nova {
         texture.numFaces = ktxTexture->numFaces;
 
         return texture;
+    }
+
+    BindlessTextureDescriptors Device::CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor> &textureDescriptors) const
+    {
+        return BindlessTextureDescriptors(*this, textureDescriptors);
     }
 }

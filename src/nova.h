@@ -6,3 +6,4 @@
 #include "nv_swapchain.h"
 #include "nv_window.h"
 #include "nv_texture.h"
+#include "nv_descriptors.h"
