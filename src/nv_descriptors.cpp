@@ -2,6 +2,8 @@
 #include "nv_device.h"
 #include "nv_helpers.h"
 
+#include <algorithm>
+
 namespace Nova {
     BindlessTextureDescriptors::BindlessTextureDescriptors(const Device& device, const std::vector<TextureDescriptor>& textureDescriptors)
         : m_device(&device) {

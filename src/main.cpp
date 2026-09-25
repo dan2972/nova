@@ -23,7 +23,10 @@ int main() {
 
     Nova::ImageView depthImageView = depthImage.CreateView(Nova::ImageAspectFlag::Depth);
 
-    Nova::AllocationFlag allocationFlags = Nova::AllocationFlag::HostAccessSequentialWrite | Nova::AllocationFlag::HostAccessAllowTransfer | Nova::AllocationFlag::Mapped;
+    Nova::AllocationFlag allocationFlags = 
+        Nova::AllocationFlag::HostAccessSequentialWrite | 
+        Nova::AllocationFlag::HostAccessAllowTransfer | 
+        Nova::AllocationFlag::Mapped;
     Nova::Buffer b1 = device.CreateBuffer(1024, Nova::BufferUsageFlag::VertexBuffer, allocationFlags);
     Nova::Buffer b2 = device.CreateBuffer(2048, Nova::BufferUsageFlag::IndexBuffer, allocationFlags);
     Nova::Buffer b3 = device.CreateBuffer(4096, Nova::BufferUsageFlag::ShaderDeviceAddress, allocationFlags);

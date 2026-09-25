@@ -2,6 +2,7 @@
 #include "nv_helpers.h"
 
 #include <vector>
+#include <algorithm>
 #include <GLFW/glfw3.h>
 
 namespace {

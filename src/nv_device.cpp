@@ -199,8 +199,8 @@ namespace Nova {
     {
         VkCommandPoolCreateInfo commandPoolCreateInfo{
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            .queueFamilyIndex = queueFamilyIndex,
-            .flags = static_cast<VkCommandPoolCreateFlags>(flags)
+            .flags = static_cast<VkCommandPoolCreateFlags>(flags),
+            .queueFamilyIndex = queueFamilyIndex
         };
 
         CommandPool commandPool{};
@@ -293,8 +293,8 @@ namespace Nova {
         Image img = CreateImage({
             .format = static_cast<ImageFormat>(ktxTexture_GetVkFormat(ktxTexture)),
             .extent = { ktxTexture->baseWidth, ktxTexture->baseHeight, ktxTexture->baseDepth },
-            .usage = ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst,
-            .mipLevels = ktxTexture->numLevels
+            .mipLevels = ktxTexture->numLevels,
+            .usage = ImageUsageFlag::Sampled | ImageUsageFlag::TransferDst
         });
         
         // temp buffer for uploading texture data
