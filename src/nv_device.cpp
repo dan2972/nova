@@ -278,7 +278,7 @@ namespace Nova {
         CheckVk(vkWaitForFences(m_device, 1, &fence->m_fence, VK_TRUE, timeout));
     }
 
-    Texture Device::CreateFromFile(const std::string &filePath, const CommandPool &commandPool)
+    Texture Device::CreateKTXTextureFromFile(const std::string &filePath, const CommandPool &commandPool)
     {
         ktxTexture* ktxTexture = nullptr;
         ktxTexture_CreateFromNamedFile(filePath.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
