@@ -7,3 +7,4 @@
 #include "nv_window.h"
 #include "nv_texture.h"
 #include "nv_descriptors.h"
+#include "nv_shader.h"

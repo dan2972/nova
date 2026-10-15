@@ -45,5 +45,15 @@ int main() {
     Nova::BindlessTextureDescriptors bindlessTextureDescriptors = device.CreateBindlessTextureDescriptors({
         { &textureView, &sampler }
     });
+
+    Nova::ShaderCompiler shaderCompiler;
+    shaderCompiler.BeginSession();
+    Nova::SPIRVData spirv = shaderCompiler.CompileToSPIRVFromShaderPath("res/test1.slang");
+    Nova::ShaderModule shaderModule = shaderCompiler.CompileToShaderModuleFromShaderPath("res/test1.slang", &device);
+    shaderCompiler.EndSession();
+
+    Nova::ShaderCompiler::WriteSPIRVToDisk(spirv, "res/test1.spirv");
+    Nova::SPIRVData spirvFromDisk = Nova::ShaderCompiler::ReadSPIRVFromDisk("res/test1.spirv");
+    
     return 0;
 }
