@@ -54,6 +54,30 @@ int main() {
 
     Nova::ShaderCompiler::WriteSPIRVToDisk(spirv, "res/test1.spirv");
     Nova::SPIRVData spirvFromDisk = Nova::ShaderCompiler::ReadSPIRVFromDisk("res/test1.spirv");
+
+    Nova::GraphicsPipelineBuilder pipelineBuilder(device);
+    pipelineBuilder
+        .AddDescriptorSetLayout(bindlessTextureDescriptors.GetDescriptorSetLayout())
+        .AddPushConstantRange({
+            .stageFlags = Nova::ShaderStageFlag::Vertex,
+            .offset = 0,
+            .size = sizeof(double)
+        })
+        .AddVertexBindingLayout({
+            .binding = 0,
+            .stride = sizeof(float) * 8,
+            .attributes = {
+                { .format = Nova::VertexFormat::Float3, .offset = 0 },
+                { .format = Nova::VertexFormat::Float3, .offset = sizeof(float) * 3 },
+                { .format = Nova::VertexFormat::Float2, .offset = sizeof(float) * 6 }
+            }
+        })
+        .AddShaderStage(Nova::ShaderStageFlag::Vertex, shaderModule, "main")
+        .AddShaderStage(Nova::ShaderStageFlag::Fragment, shaderModule, "main")
+        .EnableDepthStencil(true, true, device.GetSupportedDepthFormats()[0])
+        .SetColorFormat(Nova::ImageFormat::B8G8R8A8Unorm);
+
+    Nova::GraphicsPipeline pipeline = pipelineBuilder.Build();
     
     return 0;
 }

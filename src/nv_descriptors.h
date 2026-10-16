@@ -14,6 +14,18 @@ namespace Nova {
         const Sampler* sampler;
     };
 
+    class DescriptorSetLayout {
+    public:
+        DescriptorSetLayout() = default;
+
+        const VkDescriptorSetLayout& GetRaw() const { return m_descriptorSetLayout; }
+    
+    private:
+        VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+
+        friend class BindlessTextureDescriptors;
+    };
+
     class BindlessTextureDescriptors {
     public:
         BindlessTextureDescriptors(const Device& device, const std::vector<TextureDescriptor>& textureDescriptors);
@@ -22,7 +34,11 @@ namespace Nova {
         BindlessTextureDescriptors(const BindlessTextureDescriptors&) = delete;
         BindlessTextureDescriptors& operator=(const BindlessTextureDescriptors&) = delete;
 
+        DescriptorSetLayout GetDescriptorSetLayout() const;
+
         void Destroy();
+
+
     private:
         const Device* m_device = nullptr;
 

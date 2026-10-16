@@ -8,3 +8,4 @@
 #include "nv_texture.h"
 #include "nv_descriptors.h"
 #include "nv_shader.h"
+#include "nv_pipeline.h"
