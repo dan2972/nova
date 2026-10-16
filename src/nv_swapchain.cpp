@@ -109,6 +109,23 @@ namespace Nova {
         return swapchain;
     }
 
+    Image Swapchain::AcquireNextImage(const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
+    {
+        uint32_t imageIndex;
+        VkResult result = vkAcquireNextImageKHR(m_device->GetRaw(), m_swapchain, timeout, semaphore ? semaphore->GetRaw() : VK_NULL_HANDLE, fence ? fence->GetRaw() : VK_NULL_HANDLE, &imageIndex);
+        if (result != VK_SUCCESS) {
+            LogError("Failed to acquire next image from swapchain.");
+            return Image();
+        }
+        Image image;
+        image.m_device = m_device;
+        image.m_allocation.allocation = VK_NULL_HANDLE;
+        image.m_allocation.image = m_images[imageIndex];
+        image.m_format = m_format;
+        image.m_extent = {m_extent.width, m_extent.height, 1};
+        return image;
+    }
+
     void Swapchain::Destroy()
     {
         if (m_device == nullptr) return;

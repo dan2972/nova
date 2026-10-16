@@ -278,6 +278,15 @@ namespace Nova {
         CheckVk(vkWaitForFences(m_device, 1, &fence.m_fence, VK_TRUE, timeout));
     }
 
+    void Device::ResetFence(const Fence &fence) const
+    {
+        if (fence.m_fence == VK_NULL_HANDLE) {
+            LogError("Invalid fence.");
+            return;
+        }
+        CheckVk(vkResetFences(m_device, 1, &fence.m_fence));
+    }
+
     Texture Device::CreateKTXTextureFromFile(const std::string &filePath, const CommandPool &commandPool)
     {
         ktxTexture* ktxTexture = nullptr;

@@ -50,6 +50,7 @@ namespace Nova {
 
         void SubmitCommandBuffer(const CommandBuffer& commandBuffer, const Fence* fence = nullptr) const;
         void WaitForFence(const Fence& fence, uint64_t timeout = UINT64_MAX) const;
+        void ResetFence(const Fence& fence) const;
 
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 

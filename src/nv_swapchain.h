@@ -58,6 +58,8 @@ namespace Nova {
             return *this;
         }
 
+        Image AcquireNextImage(const Semaphore* semaphore = nullptr, const Fence* fence = nullptr, uint64_t timeout = UINT64_MAX) const;
+
         void Destroy();
 
         VkSwapchainKHR GetRaw() const { return m_swapchain; }

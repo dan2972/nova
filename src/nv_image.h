@@ -104,6 +104,7 @@ namespace Nova {
 
         friend class ImageBuilder;
         friend class Texture;
+        friend class Swapchain;
     };
 
     class ImageView {
