@@ -7,6 +7,7 @@
 #include "nv_helpers.h"
 #include "nv_image.h"
 #include "nv_surface.h"
+#include "nv_synchronization.h"
 
 namespace Nova {
     enum class ColorSpace {
