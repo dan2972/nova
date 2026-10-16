@@ -74,7 +74,7 @@ int main() {
         })
         .AddShaderStage(Nova::ShaderStageFlag::Vertex, shaderModule, "main")
         .AddShaderStage(Nova::ShaderStageFlag::Fragment, shaderModule, "main")
-        .EnableDepthStencil(true, true, device.GetSupportedDepthFormats()[0])
+        .EnableDepthStencil(true, device.GetSupportedDepthFormats()[0])
         .SetColorFormat(Nova::ImageFormat::B8G8R8A8Unorm);
 
     Nova::GraphicsPipeline pipeline = pipelineBuilder.Build();

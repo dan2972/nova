@@ -52,9 +52,9 @@ namespace Nova {
         return *this;
     }
 
-    GraphicsPipelineBuilder &GraphicsPipelineBuilder::EnableDepthStencil(bool depthTestEnable, bool depthWriteEnable, ImageFormat depthFormat)
+    GraphicsPipelineBuilder &GraphicsPipelineBuilder::EnableDepthStencil(bool depthWriteEnable, ImageFormat depthFormat)
     {
-        m_depthTestEnable = depthTestEnable;
+        m_depthTestEnable = true;
         m_depthWriteEnable = depthWriteEnable;
         m_depthFormat = depthFormat;
         return *this;

@@ -95,7 +95,7 @@ namespace Nova {
         GraphicsPipelineBuilder& AddDescriptorSetLayout(const DescriptorSetLayout& descriptorSetLayout);
         GraphicsPipelineBuilder& AddVertexBindingLayout(const VertexBindingLayout& vertexBindingLayout);
         GraphicsPipelineBuilder& AddShaderStage(ShaderStageFlag stage, const ShaderModule& shaderModule, const std::string& entryPoint = "main");
-        GraphicsPipelineBuilder& EnableDepthStencil(bool depthTestEnable, bool depthWriteEnable, ImageFormat depthFormat);
+        GraphicsPipelineBuilder& EnableDepthStencil(bool depthWriteEnable, ImageFormat depthFormat);
         GraphicsPipelineBuilder& SetColorFormat(ImageFormat colorFormat) { m_colorFormat = colorFormat; return *this; }
 
         GraphicsPipeline Build();
