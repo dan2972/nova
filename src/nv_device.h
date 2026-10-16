@@ -48,8 +48,8 @@ namespace Nova {
         CommandBuffer CreateCommandBuffer(const CommandPool& commandPool) const;
         std::vector<CommandBuffer> CreateCommandBuffers(const CommandPool& commandPool, size_t count) const;
 
-        void SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence = nullptr) const;
-        void WaitForFence(Fence* fence, uint64_t timeout = UINT64_MAX) const;
+        void SubmitCommandBuffer(const CommandBuffer& commandBuffer, const Fence* fence = nullptr) const;
+        void WaitForFence(const Fence& fence, uint64_t timeout = UINT64_MAX) const;
 
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 

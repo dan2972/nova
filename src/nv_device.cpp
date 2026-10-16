@@ -251,13 +251,13 @@ namespace Nova {
         return novaCommandBuffers;
     }
 
-    void Device::SubmitCommandBuffer(CommandBuffer* commandBuffer, Fence* fence) const
+    void Device::SubmitCommandBuffer(const CommandBuffer& commandBuffer, const Fence* fence) const
     {
-        if (commandBuffer == nullptr || commandBuffer->GetRaw() == VK_NULL_HANDLE) {
+        if (commandBuffer.GetRaw() == VK_NULL_HANDLE) {
             LogError("Invalid command buffer.");
             return;
         }
-        VkCommandBuffer rawCommandBuffer = commandBuffer->GetRaw();
+        VkCommandBuffer rawCommandBuffer = commandBuffer.GetRaw();
         VkSubmitInfo submitInfo{
             .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
             .commandBufferCount = 1,
@@ -269,13 +269,13 @@ namespace Nova {
         CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->m_fence : VK_NULL_HANDLE));
     }
 
-    void Device::WaitForFence(Fence* fence, uint64_t timeout) const
+    void Device::WaitForFence(const Fence& fence, uint64_t timeout) const
     {
-        if (fence == nullptr || fence->m_fence == VK_NULL_HANDLE) {
+        if (fence.m_fence == VK_NULL_HANDLE) {
             LogError("Invalid fence.");
             return;
         }
-        CheckVk(vkWaitForFences(m_device, 1, &fence->m_fence, VK_TRUE, timeout));
+        CheckVk(vkWaitForFences(m_device, 1, &fence.m_fence, VK_TRUE, timeout));
     }
 
     Texture Device::CreateKTXTextureFromFile(const std::string &filePath, const CommandPool &commandPool)
@@ -344,8 +344,8 @@ namespace Nova {
         });
 
         commandBuffer.End();
-        SubmitCommandBuffer(&commandBuffer, &fence);
-        WaitForFence(&fence);
+        SubmitCommandBuffer(commandBuffer, &fence);
+        WaitForFence(fence);
         
         ktxTexture_Destroy(ktxTexture);
 
