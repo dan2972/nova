@@ -55,7 +55,7 @@ int main() {
     Nova::ShaderCompiler::WriteSPIRVToDisk(spirv, "res/test1.spirv");
     Nova::SPIRVData spirvFromDisk = Nova::ShaderCompiler::ReadSPIRVFromDisk("res/test1.spirv");
 
-    Nova::GraphicsPipelineBuilder pipelineBuilder(device);
+    Nova::GraphicsPipelineBuilder pipelineBuilder = device.CreateGraphicsPipelineBuilder();
     pipelineBuilder
         .AddDescriptorSetLayout(bindlessTextureDescriptors.GetDescriptorSetLayout())
         .AddPushConstantRange({
@@ -78,6 +78,14 @@ int main() {
         .SetColorFormat(Nova::ImageFormat::B8G8R8A8Unorm);
 
     Nova::GraphicsPipeline pipeline = pipelineBuilder.Build();
+
+    bool quit = false;
+    while (!quit) {
+        window.PollEvents();
+        if (window.ShouldClose()) {
+            quit = true;
+        }
+    }
     
     return 0;
 }

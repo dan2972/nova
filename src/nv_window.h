@@ -19,6 +19,9 @@ namespace Nova {
         Window(Window&&) = delete;
         Window& operator=(Window&&) = delete;
 
+        bool ShouldClose() const { return glfwWindowShouldClose(m_window); }
+        void PollEvents() const { glfwPollEvents(); }
+
         const Surface& GetSurface() const { return m_surface; }
 
         Extent2D GetSize() const { return Extent2D{m_width, m_height}; }

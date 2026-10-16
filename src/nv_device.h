@@ -14,6 +14,7 @@
 #include "nv_commandBuffer.h"
 #include "nv_texture.h"
 #include "nv_descriptors.h"
+#include "nv_pipeline.h"
 
 namespace Nova {
     class Device {
@@ -53,6 +54,8 @@ namespace Nova {
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 
         BindlessTextureDescriptors CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor>& textureDescriptors) const;
+
+        GraphicsPipelineBuilder CreateGraphicsPipelineBuilder() const;
     private:
         const Instance* m_instance;
         const PhysicalDevice* m_physicalDevice;

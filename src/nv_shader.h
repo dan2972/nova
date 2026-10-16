@@ -7,9 +7,9 @@
 #include <utility>
 #include <volk.h>
 
-#include "nv_device.h"
-
 namespace Nova {
+    class Device;
+    
     class SPIRVData {
     public:
         SPIRVData() = default;

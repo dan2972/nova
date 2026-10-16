@@ -371,4 +371,9 @@ namespace Nova {
     {
         return BindlessTextureDescriptors(*this, textureDescriptors);
     }
+
+    GraphicsPipelineBuilder Device::CreateGraphicsPipelineBuilder() const
+    {
+        return GraphicsPipelineBuilder(*this);
+    }
 }

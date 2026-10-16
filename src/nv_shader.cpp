@@ -1,4 +1,5 @@
 #include "nv_shader.h"
+#include "nv_device.h"
 #include "nv_helpers.h"
 
 #include <array>
