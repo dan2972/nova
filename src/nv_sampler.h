@@ -38,6 +38,7 @@ namespace Nova {
     
     class Sampler {
     public:
+        Sampler() = default;
         Sampler(const Device& device, const SamplerCreateInfo& createInfo);
         ~Sampler();
 

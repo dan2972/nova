@@ -59,7 +59,7 @@ namespace Nova {
             return *this;
         }
 
-        Image AcquireNextImage(const Semaphore* semaphore = nullptr, const Fence* fence = nullptr, uint64_t timeout = UINT64_MAX) const;
+        Image AcquireNextImage(uint32_t& imageIndex, const Semaphore* semaphore = nullptr, const Fence* fence = nullptr, uint64_t timeout = UINT64_MAX) const;
 
         void Destroy();
 
@@ -69,8 +69,8 @@ namespace Nova {
         SwapchainPresentMode GetPresentMode() const { return m_presentMode; }
         uint32_t GetWidth() const { return m_extent.width; }
         uint32_t GetHeight() const { return m_extent.height; }
-        std::vector<VkImage> GetImages() const { return m_images; }
-        std::vector<VkImageView> GetImageViews() const { return m_imageViews; }
+        std::vector<Image> GetImages() const;
+        std::vector<ImageView> GetImageViews() const;
 
     private:
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;

@@ -109,9 +109,8 @@ namespace Nova {
         return swapchain;
     }
 
-    Image Swapchain::AcquireNextImage(const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
+    Image Swapchain::AcquireNextImage(uint32_t& imageIndex, const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
     {
-        uint32_t imageIndex;
         VkResult result = vkAcquireNextImageKHR(m_device->GetRaw(), m_swapchain, timeout, semaphore ? semaphore->GetRaw() : VK_NULL_HANDLE, fence ? fence->GetRaw() : VK_NULL_HANDLE, &imageIndex);
         if (result != VK_SUCCESS) {
             LogError("Failed to acquire next image from swapchain.");
@@ -143,5 +142,37 @@ namespace Nova {
             m_swapchain = VK_NULL_HANDLE;
         }
         m_device = nullptr;
+    }
+
+    std::vector<Image> Swapchain::GetImages() const
+    {
+        std::vector<Image> images;
+        images.reserve(m_images.size());
+        for (const VkImage& vkImage : m_images) {
+            Image image;
+            image.m_device = m_device;
+            image.m_allocation.allocation = VK_NULL_HANDLE;
+            image.m_allocation.image = vkImage;
+            image.m_format = m_format;
+            image.m_extent = {m_extent.width, m_extent.height, 1};
+            image.m_usageFlags = ImageUsageFlag::ColorAttachment;
+            image.m_mipLevels = 1;
+            images.push_back(std::move(image));
+        }
+        return images;
+    }
+
+    std::vector<ImageView> Swapchain::GetImageViews() const
+    {
+        std::vector<ImageView> imageViews;
+        imageViews.reserve(m_imageViews.size());
+        for (const VkImageView& vkImageView : m_imageViews) {
+            ImageView imageView;
+            imageView.m_device = m_device;
+            imageView.m_imageView = vkImageView;
+            imageView.m_ownsImageView = false;
+            imageViews.push_back(std::move(imageView));
+        }
+        return imageViews;
     }
 }

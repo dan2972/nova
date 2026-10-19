@@ -89,6 +89,13 @@ namespace Nova {
         return layout;
     }
 
+    DescriptorSet BindlessTextureDescriptors::GetDescriptorSet() const
+    {
+        DescriptorSet descriptorSet;
+        descriptorSet.m_descriptorSet = m_descriptorSet;
+        return descriptorSet;
+    }
+
     void BindlessTextureDescriptors::Destroy()
     {
         if (m_descriptorSet != VK_NULL_HANDLE) {

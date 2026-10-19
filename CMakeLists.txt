@@ -15,6 +15,7 @@ find_package(slang CONFIG REQUIRED)
 find_package(spdlog REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Ktx CONFIG REQUIRED)
+find_package(tinyobjloader CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
@@ -27,6 +28,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     spdlog::spdlog
     glfw
     KTX::ktx
+    tinyobjloader::tinyobjloader
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

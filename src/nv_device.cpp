@@ -120,6 +120,14 @@ namespace Nova {
         }
     }
 
+    Queue Device::GetGraphicsQueue() const
+    {
+        Queue queue;
+        queue.m_familyIndex = m_physicalDevice->GetGraphicsQueueFamilyIndex();
+        vkGetDeviceQueue(m_device, queue.m_familyIndex, 0, &queue.m_queue);
+        return queue;
+    }
+
     std::vector<ImageFormat> Device::GetSupportedDepthFormats() const
     {
         return m_physicalDevice->GetSupportedDepthFormats();
@@ -264,9 +272,60 @@ namespace Nova {
             .pCommandBuffers = &rawCommandBuffer
         };
 
-        VkQueue graphicsQueue;
-        vkGetDeviceQueue(m_device, GetPhysicalDevice().GetGraphicsQueueFamilyIndex(), 0, &graphicsQueue);
-        CheckVk(vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence ? fence->m_fence : VK_NULL_HANDLE));
+        CheckVk(vkQueueSubmit(GetGraphicsQueue().GetRaw(), 1, &submitInfo, fence ? fence->m_fence : VK_NULL_HANDLE));
+    }
+
+    void Device::SubmitCommandBuffers(CommandBufferSubmitInfo submitInfo) const
+    {
+        if (submitInfo.commandBuffers.empty()) {
+            LogError("No command buffers provided for submission.");
+            return;
+        }
+
+        std::vector<VkCommandBuffer> rawCommandBuffers;
+        rawCommandBuffers.reserve(submitInfo.commandBuffers.size());
+        for (const auto* cmdBuffer : submitInfo.commandBuffers) {
+            if (cmdBuffer && cmdBuffer->GetRaw() != VK_NULL_HANDLE) {
+                rawCommandBuffers.push_back(cmdBuffer->GetRaw());
+            } else {
+                LogError("Invalid command buffer in submission list.");
+                return;
+            }
+        }
+
+        std::vector<VkSemaphore> waitSemaphores;
+        for (const auto* semaphore : submitInfo.waitSemaphores) {
+            if (semaphore && semaphore->GetRaw() != VK_NULL_HANDLE) {
+                waitSemaphores.push_back(semaphore->GetRaw());
+            } else {
+                LogError("Invalid wait semaphore in submission list.");
+                return;
+            }
+        }
+
+        std::vector<VkSemaphore> signalSemaphores;
+        for (const auto* semaphore : submitInfo.signalSemaphores) {
+            if (semaphore && semaphore->GetRaw() != VK_NULL_HANDLE) {
+                signalSemaphores.push_back(semaphore->GetRaw());
+            } else {
+                LogError("Invalid signal semaphore in submission list.");
+                return;
+            }
+        }
+
+        VkPipelineStageFlags waitStageMask = static_cast<VkPipelineStageFlags>(submitInfo.waitStageMask);
+        VkSubmitInfo vkSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
+            .pWaitSemaphores = waitSemaphores.data(),
+            .pWaitDstStageMask = &waitStageMask,
+            .commandBufferCount = static_cast<uint32_t>(rawCommandBuffers.size()),
+            .pCommandBuffers = rawCommandBuffers.data(),
+            .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+            .pSignalSemaphores = signalSemaphores.data()
+        };
+
+        CheckVk(vkQueueSubmit(GetGraphicsQueue().GetRaw(), 1, &vkSubmitInfo, submitInfo.fence ? submitInfo.fence->GetRaw() : VK_NULL_HANDLE));
     }
 
     void Device::WaitForFence(const Fence& fence, uint64_t timeout) const
@@ -285,6 +344,40 @@ namespace Nova {
             return;
         }
         CheckVk(vkResetFences(m_device, 1, &fence.m_fence));
+    }
+
+    void Device::WaitIdle() const
+    {
+        CheckVk(vkDeviceWaitIdle(m_device));
+    }
+
+    void Device::Present(const Swapchain &swapchain, uint32_t imageIndex, const std::vector<const Semaphore *> &waitSemaphores) const
+    {
+        std::vector<VkSemaphore> rawWaitSemaphores;
+        rawWaitSemaphores.reserve(waitSemaphores.size());
+        for (const auto* semaphore : waitSemaphores) {
+            if (semaphore && semaphore->GetRaw() != VK_NULL_HANDLE) {
+                rawWaitSemaphores.push_back(semaphore->GetRaw());
+            } else {
+                LogError("Invalid wait semaphore in present list.");
+                return;
+            }
+        }
+
+        VkSwapchainKHR rawSwapchain = swapchain.GetRaw();
+        VkPresentInfoKHR presentInfo{
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .waitSemaphoreCount = static_cast<uint32_t>(rawWaitSemaphores.size()),
+            .pWaitSemaphores = rawWaitSemaphores.data(),
+            .swapchainCount = 1,
+            .pSwapchains = &rawSwapchain,
+            .pImageIndices = &imageIndex
+        };
+
+        VkResult result = vkQueuePresentKHR(GetGraphicsQueue().GetRaw(), &presentInfo);
+        if (result != VK_SUCCESS) {
+            LogError("Failed to present swapchain image.");
+        }
     }
 
     Texture Device::CreateKTXTextureFromFile(const std::string &filePath, const CommandPool &commandPool)
@@ -319,7 +412,8 @@ namespace Nova {
 
         commandBuffer.Begin();
         
-        commandBuffer.TransitionImage(img, {
+        commandBuffer.TransitionImage({
+            .image = &img,
             .oldLayout = ImageLayout::Undefined,
             .newLayout = ImageLayout::TransferDst,
             .dst = SyncScope::TransferWrite(),
@@ -344,7 +438,8 @@ namespace Nova {
         }
         commandBuffer.CopyBufferToImage(stagingBuffer, img, ImageLayout::TransferDst, copyRegions);
 
-        commandBuffer.TransitionImage(img, {
+        commandBuffer.TransitionImage({
+            .image = &img,
             .oldLayout = ImageLayout::TransferDst,
             .newLayout = ImageLayout::ReadOnly,
             .src = SyncScope::TransferWrite(),

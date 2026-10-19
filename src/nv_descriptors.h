@@ -26,6 +26,17 @@ namespace Nova {
         friend class BindlessTextureDescriptors;
     };
 
+    class DescriptorSet {
+    public:
+        DescriptorSet() = default;
+
+        const VkDescriptorSet& GetRaw() const { return m_descriptorSet; }
+    private:
+        VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
+
+        friend class BindlessTextureDescriptors;
+    };
+
     class BindlessTextureDescriptors {
     public:
         BindlessTextureDescriptors(const Device& device, const std::vector<TextureDescriptor>& textureDescriptors);
@@ -35,6 +46,7 @@ namespace Nova {
         BindlessTextureDescriptors& operator=(const BindlessTextureDescriptors&) = delete;
 
         DescriptorSetLayout GetDescriptorSetLayout() const;
+        DescriptorSet GetDescriptorSet() const;
 
         void Destroy();
 

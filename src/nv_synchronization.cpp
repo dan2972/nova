@@ -8,6 +8,7 @@ namespace Nova {
             vkDestroyFence(m_device->GetRaw(), m_fence, nullptr);
             m_fence = VK_NULL_HANDLE;
         }
+        m_device = nullptr;
     }
 
     void Semaphore::Destroy() {
@@ -15,5 +16,6 @@ namespace Nova {
             vkDestroySemaphore(m_device->GetRaw(), m_semaphore, nullptr);
             m_semaphore = VK_NULL_HANDLE;
         }
+        m_device = nullptr;
     }
 }

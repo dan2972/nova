@@ -49,6 +49,8 @@ namespace Nova {
         Metadata = VK_IMAGE_ASPECT_METADATA_BIT
     };
 
+    ENABLE_BITMASK_OPERATORS(ImageAspectFlag, VkImageAspectFlags)
+
     struct ImageCreateInfo {
         ImageFormat format = ImageFormat::R8G8B8A8Unorm;
         Extent3D extent{1, 1, 1};
@@ -121,8 +123,10 @@ namespace Nova {
                 Destroy();
                 m_imageView = other.m_imageView;
                 m_device = other.m_device;
+                m_ownsImageView = other.m_ownsImageView;
                 other.m_imageView = VK_NULL_HANDLE;
                 other.m_device = nullptr;
+                other.m_ownsImageView = false;
             }
             return *this;
         }
@@ -132,7 +136,9 @@ namespace Nova {
     private:
         VkImageView m_imageView = VK_NULL_HANDLE;
         const Device* m_device = nullptr;
+        bool m_ownsImageView = true; // Swapchain image views are owned by the swapchain, so we don't want to destroy them when the ImageView is destroyed.
 
         friend class Image;
+        friend class Swapchain;
     };
 }

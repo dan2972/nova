@@ -1,9 +1,11 @@
 #include "nv_window.h"
 #include "nv_helpers.h"
+#include <unordered_map>
 
 namespace {
     uint32_t sDefaultWidth = 1280;
     uint32_t sDefaultHeight = 720;
+    std::unordered_map<GLFWwindow*, Nova::Window*> sWindows;
 }
 
 namespace Nova {
@@ -19,6 +21,8 @@ namespace Nova {
             Nova::LogError("Failed to create GLFW window");
             exit(-1);
         }
+
+        sWindows[m_window] = this;
         
         CheckVk(glfwCreateWindowSurface(m_instance->GetRaw(), m_window, nullptr, &m_surface.m_surface));
     }
@@ -31,8 +35,30 @@ namespace Nova {
         }
 
         if (m_window != nullptr) {
+            sWindows.erase(m_window);
             glfwDestroyWindow(m_window);
             m_window = nullptr;
+        }
+    }
+
+    void Window::SetFramebufferResizeCallback(FramebufferResizeCallback callback)
+    {
+        m_framebufferResizeCallback = callback;
+        glfwSetFramebufferSizeCallback(m_window, DispatchFramebufferResize);
+    }
+
+    void Window::DispatchFramebufferResize(GLFWwindow* window, int width, int height)
+    {
+        const auto it = sWindows.find(window);
+        if (it == sWindows.end()) {
+            return;
+        }
+        auto* self = it->second;
+
+        self->m_width = static_cast<uint32_t>(width);
+        self->m_height = static_cast<uint32_t>(height);
+        if (self->m_framebufferResizeCallback) {
+            self->m_framebufferResizeCallback(self, width, height);
         }
     }
 }

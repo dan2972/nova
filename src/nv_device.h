@@ -2,7 +2,6 @@
 
 #include <volk.h>
 #include <vector>
-#include <glm/glm.hpp>
 #include "nv_instance.h"
 #include "nv_physicalDevice.h"
 #include "nv_window.h"
@@ -17,6 +16,17 @@
 #include "nv_pipeline.h"
 
 namespace Nova {
+    class Queue {
+    public:
+        VkQueue GetRaw() const { return m_queue; }
+        uint32_t GetFamilyIndex() const { return m_familyIndex; }
+    private:
+        VkQueue m_queue = VK_NULL_HANDLE;
+        uint32_t m_familyIndex = 0;
+
+        friend class Device;
+    };
+
     class Device {
     public:
         Device(const Instance& instance);
@@ -32,6 +42,8 @@ namespace Nova {
 
         const Instance& GetInstance() const { return *m_instance; }
         const PhysicalDevice& GetPhysicalDevice() const { return *m_physicalDevice; }
+
+        Queue GetGraphicsQueue() const;
 
         std::vector<ImageFormat> GetSupportedDepthFormats() const;
         SwapchainBuilder CreateSwapchainBuilder(const Surface& surface);
@@ -49,8 +61,13 @@ namespace Nova {
         std::vector<CommandBuffer> CreateCommandBuffers(const CommandPool& commandPool, size_t count) const;
 
         void SubmitCommandBuffer(const CommandBuffer& commandBuffer, const Fence* fence = nullptr) const;
+        void SubmitCommandBuffers(CommandBufferSubmitInfo submitInfo) const;
         void WaitForFence(const Fence& fence, uint64_t timeout = UINT64_MAX) const;
         void ResetFence(const Fence& fence) const;
+
+        void WaitIdle() const;
+
+        void Present(const Swapchain& swapchain, uint32_t imageIndex, const std::vector<const Semaphore*>& waitSemaphores = {}) const;
 
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 

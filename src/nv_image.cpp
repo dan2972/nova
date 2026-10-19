@@ -77,9 +77,11 @@ namespace Nova {
     
     void ImageView::Destroy()
     {
-        if (m_imageView != VK_NULL_HANDLE) {
+        if (m_imageView != VK_NULL_HANDLE && m_ownsImageView) {
             vkDestroyImageView(m_device->GetRaw(), m_imageView, nullptr);
-            m_imageView = VK_NULL_HANDLE;
         }
+        m_imageView = VK_NULL_HANDLE;
+        m_device = nullptr;
+        m_ownsImageView = false;
     }
 }

@@ -3,11 +3,12 @@
 #include <volk.h>
 #include <GLFW/glfw3.h>
 #include <string>
-#include <glm/glm.hpp>
 #include "nv_instance.h"
 #include "nv_surface.h"
 
 namespace Nova {
+    using FramebufferResizeCallback = void(*)(Window* window, int width, int height);
+
     class Window {
     public:
         Window();
@@ -22,6 +23,10 @@ namespace Nova {
         bool ShouldClose() const { return glfwWindowShouldClose(m_window); }
         void PollEvents() const { glfwPollEvents(); }
 
+        void SetFramebufferResizeCallback(FramebufferResizeCallback callback);
+
+        double GetTimeSeconds() const { return glfwGetTime(); }
+
         const Surface& GetSurface() const { return m_surface; }
 
         Extent2D GetSize() const { return Extent2D{m_width, m_height}; }
@@ -34,7 +39,9 @@ namespace Nova {
         std::string m_title;
         Surface m_surface;
         const Instance* m_instance = nullptr;
+        FramebufferResizeCallback m_framebufferResizeCallback = nullptr;
 
         void Init();
+        static void DispatchFramebufferResize(GLFWwindow* window, int width, int height);
     };
 }
