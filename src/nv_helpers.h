@@ -17,7 +17,7 @@
 
 static inline void CheckVk(VkResult res, const std::source_location& location = std::source_location::current()) {
     if (res == 0) return;
-    Nova::LogError("Vulkan error: {} at {}:{}", static_cast<int>(res), location.file_name(), location.line());
+    nova::LogError("Vulkan error: {} at {}:{}", static_cast<int>(res), location.file_name(), location.line());
     exit(res);
 }
 
@@ -52,7 +52,7 @@ static inline bool PlatformDefined(Platform platform) {
     }
 }
 
-namespace Nova {
+namespace nova {
     struct Extent3D {
         uint32_t width;
         uint32_t height;

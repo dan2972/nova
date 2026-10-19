@@ -3,7 +3,7 @@
 #include "nv_device.h"
 #include "nv_helpers.h"
 
-namespace Nova {
+namespace nova {
     Image::Image(const Device &device, const ImageCreateInfo &createInfo)
     {
         VkImageCreateInfo imageCreateInfo{

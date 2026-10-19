@@ -5,10 +5,10 @@
 #include <vector>
 #include "nv_physicalDevice.h"
 
-namespace Nova {
+namespace nova {
     class Instance {
     public:
-        Instance(const std::string& applicationName = "Nova Application");
+        Instance(const std::string& applicationName = "nova Application");
         ~Instance();
 
         const std::vector<PhysicalDevice>& GetPhysicalDevices() const { return m_physicalDevices; }

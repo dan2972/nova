@@ -2,7 +2,7 @@
 
 #include "nv_device.h"
 
-namespace Nova {
+namespace nova {
     Sampler::Sampler(const Device &device, const SamplerCreateInfo &createInfo)
     {
         VkSamplerCreateInfo samplerCreateInfo{

@@ -2,7 +2,7 @@
 
 #include "nv_logger.h"
 
-namespace Nova {
+namespace nova {
     BufferDeviceAddress Buffer::GetBufferDeviceAddress()
     {
         if (!m_deviceAddress) {

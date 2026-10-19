@@ -4,7 +4,7 @@
 
 #include <algorithm>
 
-namespace Nova {
+namespace nova {
     BindlessTextureDescriptors::BindlessTextureDescriptors(const Device& device, const std::vector<TextureDescriptor>& textureDescriptors)
         : m_device(&device) {
 

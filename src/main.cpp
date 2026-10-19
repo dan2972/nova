@@ -27,29 +27,29 @@ static constexpr uint32_t maxFramesInFlight = 2;
 bool updateSwapchain = false;
 
 int main() {
-    Nova::Instance instance;
-    Nova::Window window(instance, 800, 600, "Nova Engine");
-    Nova::Device device(instance);
+    nova::Instance instance;
+    nova::Window window(instance, 800, 600, "nova Engine");
+    nova::Device device(instance);
 
-    Nova::FramebufferResizeCallback framebufferResizeCallback = [](Nova::Window* window, int width, int height) {
+    nova::FramebufferResizeCallback framebufferResizeCallback = [](nova::Window* window, int width, int height) {
         updateSwapchain = true;
     };
     window.SetFramebufferResizeCallback(framebufferResizeCallback);
 
-    Nova::Swapchain swapchain = device.CreateSwapchainBuilder(window.GetSurface())
-        .SetDesiredFormat(Nova::ImageFormat::B8G8R8A8Unorm)
-        .SetDesiredColorSpace(Nova::ColorSpace::SrgbNonlinear)
-        .SetDesiredPresentMode(Nova::SwapchainPresentMode::Fifo)
+    nova::Swapchain swapchain = device.CreateSwapchainBuilder(window.GetSurface())
+        .SetDesiredFormat(nova::ImageFormat::B8G8R8A8Unorm)
+        .SetDesiredColorSpace(nova::ColorSpace::SrgbNonlinear)
+        .SetDesiredPresentMode(nova::SwapchainPresentMode::Fifo)
         .SetDesiredExtent(window.GetSize())
         .build();
 
-    Nova::Image depthImage = device.CreateImage({
+    nova::Image depthImage = device.CreateImage({
         .format = device.GetSupportedDepthFormats()[0],
         .extent = { window.GetWidth(), window.GetHeight(), 1 },
-        .usage = Nova::ImageUsageFlag::DepthStencilAttachment
+        .usage = nova::ImageUsageFlag::DepthStencilAttachment
     });
 
-    Nova::ImageView depthImageView = depthImage.CreateView(Nova::ImageAspectFlag::Depth);
+    nova::ImageView depthImageView = depthImage.CreateView(nova::ImageAspectFlag::Depth);
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -70,25 +70,25 @@ int main() {
         indices.push_back(indices.size());
     }
 
-    Nova::AllocationFlag allocationFlags = 
-        Nova::AllocationFlag::HostAccessSequentialWrite | 
-        Nova::AllocationFlag::HostAccessAllowTransfer | 
-        Nova::AllocationFlag::Mapped;
-    Nova::Buffer vertexBuffer = device.CreateBuffer(vertices.size() * sizeof(Vertex), Nova::BufferUsageFlag::VertexBuffer, allocationFlags);
-    Nova::Buffer indexBuffer = device.CreateBuffer(indices.size() * sizeof(uint16_t), Nova::BufferUsageFlag::IndexBuffer, allocationFlags);
+    nova::AllocationFlag allocationFlags = 
+        nova::AllocationFlag::HostAccessSequentialWrite | 
+        nova::AllocationFlag::HostAccessAllowTransfer | 
+        nova::AllocationFlag::Mapped;
+    nova::Buffer vertexBuffer = device.CreateBuffer(vertices.size() * sizeof(Vertex), nova::BufferUsageFlag::VertexBuffer, allocationFlags);
+    nova::Buffer indexBuffer = device.CreateBuffer(indices.size() * sizeof(uint16_t), nova::BufferUsageFlag::IndexBuffer, allocationFlags);
     memcpy(vertexBuffer.GetMappedData(), vertices.data(), vertices.size() * sizeof(Vertex));
     memcpy(indexBuffer.GetMappedData(), indices.data(), indices.size() * sizeof(uint16_t));
 
-    Nova::CommandPool commandPool = device.CreateCommandPool(Nova::CommandPoolCreateFlag::ResetCommandBuffer);
+    nova::CommandPool commandPool = device.CreateCommandPool(nova::CommandPoolCreateFlag::ResetCommandBuffer);
 
-    std::array<Nova::Buffer, maxFramesInFlight> shaderDataBuffers;
-    std::array<Nova::CommandBuffer, maxFramesInFlight> commandBuffers;
-    std::array<Nova::Fence, maxFramesInFlight> fences;
-    std::array<Nova::Semaphore, maxFramesInFlight> renderSemaphores;
-    std::vector<Nova::Semaphore> presentSemaphores;
+    std::array<nova::Buffer, maxFramesInFlight> shaderDataBuffers;
+    std::array<nova::CommandBuffer, maxFramesInFlight> commandBuffers;
+    std::array<nova::Fence, maxFramesInFlight> fences;
+    std::array<nova::Semaphore, maxFramesInFlight> renderSemaphores;
+    std::vector<nova::Semaphore> presentSemaphores;
 
     for (size_t i = 0; i < maxFramesInFlight; ++i) {
-        shaderDataBuffers[i] = device.CreateBuffer(sizeof(ShaderData), Nova::BufferUsageFlag::ShaderDeviceAddress, allocationFlags);
+        shaderDataBuffers[i] = device.CreateBuffer(sizeof(ShaderData), nova::BufferUsageFlag::ShaderDeviceAddress, allocationFlags);
         commandBuffers[i] = device.CreateCommandBuffer(commandPool);
 
         renderSemaphores[i] = device.CreateSemaphore();
@@ -100,9 +100,9 @@ int main() {
         presentSemaphores[i] = device.CreateSemaphore();
     }
 
-    std::array<Nova::Texture, 3> textures;
-    std::array<Nova::Sampler, 3> samplers;
-    std::array<Nova::ImageView, 3> textureViews;
+    std::array<nova::Texture, 3> textures;
+    std::array<nova::Sampler, 3> samplers;
+    std::array<nova::ImageView, 3> textureViews;
     for (size_t i = 0; i < textures.size(); ++i) {
         std::string texturePath = "res/suzanne" + std::to_string(i) + ".ktx";
         textures[i] = device.CreateKTXTextureFromFile(texturePath, commandPool);
@@ -110,26 +110,26 @@ int main() {
         textureViews[i] = textures[i].CreateView();
     }
 
-    Nova::BindlessTextureDescriptors bindlessTextureDescriptors = device.CreateBindlessTextureDescriptors({
+    nova::BindlessTextureDescriptors bindlessTextureDescriptors = device.CreateBindlessTextureDescriptors({
         { &textureViews[0], &samplers[0] },
         { &textureViews[1], &samplers[1] },
         { &textureViews[2], &samplers[2] }
     });
 
-    Nova::ShaderCompiler shaderCompiler;
+    nova::ShaderCompiler shaderCompiler;
     shaderCompiler.BeginSession();
-    Nova::SPIRVData spirv = shaderCompiler.CompileToSPIRVFromShaderPath("res/test1.slang");
-    Nova::ShaderModule shaderModule = shaderCompiler.CompileToShaderModuleFromShaderPath("res/test1.slang", &device);
+    nova::SPIRVData spirv = shaderCompiler.CompileToSPIRVFromShaderPath("res/test1.slang");
+    nova::ShaderModule shaderModule = shaderCompiler.CompileToShaderModuleFromShaderPath("res/test1.slang", &device);
     shaderCompiler.EndSession();
 
-    // Nova::ShaderCompiler::WriteSPIRVToDisk(spirv, "res/test1.spirv");
-    // Nova::SPIRVData spirvFromDisk = Nova::ShaderCompiler::ReadSPIRVFromDisk("res/test1.spirv");
+    // nova::ShaderCompiler::WriteSPIRVToDisk(spirv, "res/test1.spirv");
+    // nova::SPIRVData spirvFromDisk = nova::ShaderCompiler::ReadSPIRVFromDisk("res/test1.spirv");
 
-    Nova::GraphicsPipelineBuilder pipelineBuilder = device.CreateGraphicsPipelineBuilder();
+    nova::GraphicsPipelineBuilder pipelineBuilder = device.CreateGraphicsPipelineBuilder();
     pipelineBuilder
         .AddDescriptorSetLayout(bindlessTextureDescriptors.GetDescriptorSetLayout())
         .AddPushConstantRange({
-            .stageFlags = Nova::ShaderStageFlag::Vertex,
+            .stageFlags = nova::ShaderStageFlag::Vertex,
             .offset = 0,
             .size = sizeof(double)
         })
@@ -137,17 +137,17 @@ int main() {
             .binding = 0,
             .stride = sizeof(float) * 8,
             .attributes = {
-                { .format = Nova::VertexFormat::Float3, .offset = 0 },
-                { .format = Nova::VertexFormat::Float3, .offset = sizeof(float) * 3 },
-                { .format = Nova::VertexFormat::Float2, .offset = sizeof(float) * 6 }
+                { .format = nova::VertexFormat::Float3, .offset = 0 },
+                { .format = nova::VertexFormat::Float3, .offset = sizeof(float) * 3 },
+                { .format = nova::VertexFormat::Float2, .offset = sizeof(float) * 6 }
             }
         })
-        .AddShaderStage(Nova::ShaderStageFlag::Vertex, shaderModule, "main")
-        .AddShaderStage(Nova::ShaderStageFlag::Fragment, shaderModule, "main")
+        .AddShaderStage(nova::ShaderStageFlag::Vertex, shaderModule, "main")
+        .AddShaderStage(nova::ShaderStageFlag::Fragment, shaderModule, "main")
         .EnableDepthStencil(true, device.GetSupportedDepthFormats()[0])
-        .SetColorFormat(Nova::ImageFormat::B8G8R8A8Unorm);
+        .SetColorFormat(nova::ImageFormat::B8G8R8A8Unorm);
 
-    Nova::GraphicsPipeline pipeline = pipelineBuilder.Build();
+    nova::GraphicsPipeline pipeline = pipelineBuilder.Build();
 
     bool quit = false;
     uint64_t lastTime = window.GetTimeSeconds();
@@ -161,9 +161,9 @@ int main() {
         device.WaitForFence(fences[frameIndex]);
         device.ResetFence(fences[frameIndex]);
 
-        const Nova::Image swapchainImage = swapchain.AcquireNextImage(imageIndex, &renderSemaphores[frameIndex]);
+        const nova::Image swapchainImage = swapchain.AcquireNextImage(imageIndex, &renderSemaphores[frameIndex]);
 
-        Nova::Extent2D windowSize = window.GetSize();
+        nova::Extent2D windowSize = window.GetSize();
         shaderData.projection = glm::perspective(glm::radians(45.0f), (float)windowSize.width / (float)windowSize.height, 0.1f, 32.0f);
 		shaderData.view = glm::translate(glm::mat4(1.0f), camPos);
 		for (auto i = 0; i < 3; i++) {
@@ -172,32 +172,32 @@ int main() {
 		}
 		memcpy(shaderDataBuffers[frameIndex].GetMappedData(), &shaderData, sizeof(ShaderData));
 
-        Nova::CommandBuffer& commandBuffer = commandBuffers[frameIndex];
+        nova::CommandBuffer& commandBuffer = commandBuffers[frameIndex];
         commandBuffer.Reset();
         commandBuffer.Begin();
 
         commandBuffer.TransitionImages({
-            Nova::ImageTransition{
+            nova::ImageTransition{
                 .image = &swapchainImage,
-                .oldLayout = Nova::ImageLayout::Undefined,
-                .newLayout = Nova::ImageLayout::AttachmentOptimal,
-                .src = {Nova::PipelineStageFlag::ColorAttachmentOutput, Nova::AccessFlag::None},
-                .dst = {Nova::PipelineStageFlag::ColorAttachmentOutput, Nova::AccessFlag::ColorAttachmentRead | Nova::AccessFlag::ColorAttachmentWrite},
-                .range = Nova::ImageSubresourceRange::Color(),
+                .oldLayout = nova::ImageLayout::Undefined,
+                .newLayout = nova::ImageLayout::AttachmentOptimal,
+                .src = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::None},
+                .dst = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::ColorAttachmentRead | nova::AccessFlag::ColorAttachmentWrite},
+                .range = nova::ImageSubresourceRange::Color(),
             },
-            Nova::ImageTransition{
+            nova::ImageTransition{
                 .image = &depthImage,
-                .oldLayout = Nova::ImageLayout::Undefined,
-                .newLayout = Nova::ImageLayout::AttachmentOptimal,
-                .src = {Nova::PipelineStageFlag::LateFragmentTests, Nova::AccessFlag::DepthStencilAttachmentWrite},
-                .dst = {Nova::PipelineStageFlag::EarlyFragmentTests, Nova::AccessFlag::DepthStencilAttachmentWrite},
-                .range = Nova::ImageSubresourceRange::DepthStencil(),
+                .oldLayout = nova::ImageLayout::Undefined,
+                .newLayout = nova::ImageLayout::AttachmentOptimal,
+                .src = {nova::PipelineStageFlag::LateFragmentTests, nova::AccessFlag::DepthStencilAttachmentWrite},
+                .dst = {nova::PipelineStageFlag::EarlyFragmentTests, nova::AccessFlag::DepthStencilAttachmentWrite},
+                .range = nova::ImageSubresourceRange::DepthStencil(),
             }
         });
 
         commandBuffer.BeginRendering({
-            Nova::RenderAttachmentInfo::ColorAttachment(swapchain.GetImageViews()[imageIndex], {0.0f, 0.0f, 0.0f, 1.0f}),
-            Nova::RenderAttachmentInfo::DepthAttachment(depthImageView, {1.0f, 0.0f, 0.0f, 0.0f})
+            nova::RenderAttachmentInfo::ColorAttachment(swapchain.GetImageViews()[imageIndex], {0.0f, 0.0f, 0.0f, 1.0f}),
+            nova::RenderAttachmentInfo::DepthAttachment(depthImageView, {1.0f, 0.0f, 0.0f, 0.0f})
         }, windowSize);
 
         commandBuffer.SetViewport({0.0f, 0.0f, (float)windowSize.width, (float)windowSize.height, 0.0f, 1.0f});
@@ -205,18 +205,18 @@ int main() {
         commandBuffer.SetScissor({0, 0, windowSize.width, windowSize.height});
         commandBuffer.BindDescriptorSet(pipeline.GetPipelineLayout(), bindlessTextureDescriptors.GetDescriptorSet());
         commandBuffer.BindVertexBuffer(vertexBuffer);
-        commandBuffer.BindIndexBuffer(indexBuffer, 0, Nova::IndexType::Uint16);
+        commandBuffer.BindIndexBuffer(indexBuffer, 0, nova::IndexType::Uint16);
         auto shaderDataBufferDeviceAddress = shaderDataBuffers[frameIndex].GetBufferDeviceAddress();
-        commandBuffer.PushConstants(pipeline.GetPipelineLayout(), Nova::ShaderStageFlag::Vertex, 0, sizeof(double), &shaderDataBufferDeviceAddress);
+        commandBuffer.PushConstants(pipeline.GetPipelineLayout(), nova::ShaderStageFlag::Vertex, 0, sizeof(double), &shaderDataBufferDeviceAddress);
         commandBuffer.DrawIndexed(indexCount, 3);
         commandBuffer.EndRendering();
         commandBuffer.TransitionImage({
             .image = &swapchainImage,
-            .oldLayout = Nova::ImageLayout::AttachmentOptimal,
-            .newLayout = Nova::ImageLayout::PresentSrc,
-            .src = {Nova::PipelineStageFlag::ColorAttachmentOutput, Nova::AccessFlag::ColorAttachmentWrite},
-            .dst = {Nova::PipelineStageFlag::ColorAttachmentOutput, Nova::AccessFlag::None},
-            .range = Nova::ImageSubresourceRange::Color(),
+            .oldLayout = nova::ImageLayout::AttachmentOptimal,
+            .newLayout = nova::ImageLayout::PresentSrc,
+            .src = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::ColorAttachmentWrite},
+            .dst = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::None},
+            .range = nova::ImageSubresourceRange::Color(),
         });
         commandBuffer.End();
 
@@ -224,7 +224,7 @@ int main() {
             .commandBuffers = { &commandBuffer },
             .waitSemaphores = { &renderSemaphores[frameIndex] },
             .signalSemaphores = { &presentSemaphores[imageIndex] },
-            .waitStageMask = Nova::PipelineStageFlag::ColorAttachmentOutput,
+            .waitStageMask = nova::PipelineStageFlag::ColorAttachmentOutput,
             .fence = &fences[frameIndex]
         });
 
@@ -245,19 +245,19 @@ int main() {
             device.WaitIdle();
             swapchain.Destroy();
             swapchain = device.CreateSwapchainBuilder(window.GetSurface())
-                .SetDesiredFormat(Nova::ImageFormat::B8G8R8A8Unorm)
-                .SetDesiredColorSpace(Nova::ColorSpace::SrgbNonlinear)
-                .SetDesiredPresentMode(Nova::SwapchainPresentMode::Fifo)
+                .SetDesiredFormat(nova::ImageFormat::B8G8R8A8Unorm)
+                .SetDesiredColorSpace(nova::ColorSpace::SrgbNonlinear)
+                .SetDesiredPresentMode(nova::SwapchainPresentMode::Fifo)
                 .SetDesiredExtent(window.GetSize())
                 .build();
             depthImage.Destroy();
             depthImage = device.CreateImage({
                 .format = device.GetSupportedDepthFormats()[0],
                 .extent = { window.GetWidth(), window.GetHeight(), 1 },
-                .usage = Nova::ImageUsageFlag::DepthStencilAttachment
+                .usage = nova::ImageUsageFlag::DepthStencilAttachment
             });
             depthImageView.Destroy();
-            depthImageView = depthImage.CreateView(Nova::ImageAspectFlag::Depth);
+            depthImageView = depthImage.CreateView(nova::ImageAspectFlag::Depth);
         }
     }
     device.WaitIdle();

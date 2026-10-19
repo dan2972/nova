@@ -10,7 +10,7 @@
 #include "nv_shader.h"
 #include "nv_image.h"
 
-namespace Nova {
+namespace nova {
     class Device;
 
     enum class VertexFormat : std::underlying_type_t<VkFormat> {

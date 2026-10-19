@@ -7,7 +7,7 @@ namespace {
     static VmaAllocator s_allocator = VK_NULL_HANDLE;
     static bool sVmaInitialized = false;
 
-    void sCheckVmaInitialized(const Nova::Instance& instance, const Nova::Device& device) {
+    void sCheckVmaInitialized(const nova::Instance& instance, const nova::Device& device) {
         if (!sVmaInitialized) {
             VmaVulkanFunctions vkFunctions = {};
             vkFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -25,7 +25,7 @@ namespace {
     }
 }
 
-namespace Nova {
+namespace nova {
 
     void BufferAllocation::Destroy() {
         if (allocation != VK_NULL_HANDLE) {

@@ -15,7 +15,7 @@
 #include "nv_descriptors.h"
 #include "nv_pipeline.h"
 
-namespace Nova {
+namespace nova {
     class Queue {
     public:
         VkQueue GetRaw() const { return m_queue; }

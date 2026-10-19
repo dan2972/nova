@@ -7,7 +7,7 @@
 #include "nv_image.h"
 #include "nv_surface.h"
 
-namespace Nova {
+namespace nova {
     class PhysicalDevice {
     public:
         PhysicalDevice(VkPhysicalDevice physicalDevice);

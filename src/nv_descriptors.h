@@ -6,7 +6,7 @@
 #include "nv_image.h"
 #include "nv_sampler.h"
 
-namespace Nova {
+namespace nova {
     class Device;
 
     struct TextureDescriptor {

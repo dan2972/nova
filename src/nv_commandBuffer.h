@@ -11,7 +11,7 @@
 #include "nv_synchronization.h"
 #include "nv_shader.h"
 
-namespace Nova {
+namespace nova {
     class Device;
     class GraphicsPipeline;
     class PipelineLayout;

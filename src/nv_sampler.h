@@ -2,7 +2,7 @@
 
 #include <volk.h>
 
-namespace Nova {
+namespace nova {
     class Device;
 
     enum class SamplerFilter {

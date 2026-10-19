@@ -4,7 +4,7 @@
 #include "nv_helpers.h"
 #include "nv_commandBuffer.h"
 
-namespace Nova {
+namespace nova {
     ImageView Texture::CreateView() const
     {
         return m_image.CreateView();

@@ -6,7 +6,7 @@
 #include "nv_instance.h"
 #include "nv_surface.h"
 
-namespace Nova {
+namespace nova {
     using FramebufferResizeCallback = void(*)(Window* window, int width, int height);
 
     class Window {

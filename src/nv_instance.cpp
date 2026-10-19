@@ -74,13 +74,13 @@ namespace {
         auto mt = sGetMessageTypeString(messageType);
         auto msg = fmt::format("[Vulkan {} {}]: {}", mt, ms, pCallbackData->pMessage);
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-            Nova::LogError("{}", msg);
+            nova::LogError("{}", msg);
         } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            Nova::LogWarn("{}", msg);
+            nova::LogWarn("{}", msg);
         } else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-            Nova::LogInfo("{}", msg);
+            nova::LogInfo("{}", msg);
         } else {
-            Nova::LogDebug("{}", msg);
+            nova::LogDebug("{}", msg);
         }
 
         return VK_FALSE;
@@ -90,11 +90,11 @@ namespace {
     {
         if (!sGLFWInitialized) {
             if (!glfwInit()) {
-                Nova::LogError("Failed to initialize GLFW");
+                nova::LogError("Failed to initialize GLFW");
                 exit(-1);
             }
             if (!glfwVulkanSupported()) {
-                Nova::LogError("GLFW: Vulkan not supported");
+                nova::LogError("GLFW: Vulkan not supported");
                 exit(-1);
             }
             sGLFWInitialized = true;
@@ -130,7 +130,7 @@ namespace {
         };
     }
 
-    VkDebugUtilsMessengerEXT sSetupDebugMessenger(Nova::Instance& instance, PFN_vkDebugUtilsMessengerCallbackEXT pfnUserCallback)
+    VkDebugUtilsMessengerEXT sSetupDebugMessenger(nova::Instance& instance, PFN_vkDebugUtilsMessengerCallbackEXT pfnUserCallback)
     {
         if (!sValidationLayersEnabled) return VK_NULL_HANDLE;
 
@@ -142,7 +142,7 @@ namespace {
         return debugMessenger;
     }
 
-    void sDestroyDebugMessenger(Nova::Instance& instance, VkDebugUtilsMessengerEXT debugMessenger)
+    void sDestroyDebugMessenger(nova::Instance& instance, VkDebugUtilsMessengerEXT debugMessenger)
     {
         if (!sValidationLayersEnabled || debugMessenger == VK_NULL_HANDLE) return;
 
@@ -164,7 +164,7 @@ namespace {
         }
 
         if (sValidationLayersEnabled && !sCheckValidationLayerSupport()) {
-            Nova::LogError("Validation layers requested, but not available! Continueing without validation layers.");
+            nova::LogError("Validation layers requested, but not available! Continueing without validation layers.");
             sValidationLayersEnabled = false;
         }
 
@@ -172,7 +172,7 @@ namespace {
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
             .pApplicationName = applicationName.c_str(),
             .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-            .pEngineName = "Nova Engine",
+            .pEngineName = "nova Engine",
             .engineVersion = VK_MAKE_VERSION(1, 0, 0),
             .apiVersion = VK_API_VERSION_1_3
         };
@@ -206,7 +206,7 @@ namespace {
     }
 }
 
-namespace Nova {
+namespace nova {
 
     Instance::Instance(const std::string& applicationName)
     {
@@ -256,9 +256,9 @@ namespace Nova {
         // sort by device type, preferring discrete GPUs,
         // then by amount of VRAM, preferring more VRAM
         std::sort(physicalDevices.begin(), physicalDevices.end(),
-            [](Nova::PhysicalDevice a, Nova::PhysicalDevice b) {
+            [](nova::PhysicalDevice a, nova::PhysicalDevice b) {
                 if (a.GetType() != b.GetType()) {
-                    return a.GetType() == Nova::PhysicalDevice::GPUType::DiscreteGPU;
+                    return a.GetType() == nova::PhysicalDevice::GPUType::DiscreteGPU;
                 }
 
                 return a.GetVRAMSize() > b.GetVRAMSize();

@@ -1,7 +1,7 @@
 #include "nv_swapchain.h"
 #include "nv_device.h"
 
-namespace Nova {
+namespace nova {
     SwapchainBuilder::SwapchainBuilder(const Device& device, const Surface& surface) : m_device(&device), m_surface(&surface) {
         VkSurfaceCapabilitiesKHR surfaceCaps = device.GetPhysicalDevice().GetSurfaceCapabilities(surface);
         m_createInfo.surface = surface.GetRaw();

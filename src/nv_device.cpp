@@ -5,7 +5,7 @@
 #include "nv_logger.h"
 
 namespace {
-    bool sSupportsRequiredFeatures(const Nova::PhysicalDevice& physicalDevice)
+    bool sSupportsRequiredFeatures(const nova::PhysicalDevice& physicalDevice)
     {
         VkPhysicalDeviceVulkan12Features vk12Features{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
@@ -30,10 +30,10 @@ namespace {
                vk13Features.dynamicRendering;
     }
 
-    bool sCreateLogicalDevice(const Nova::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, VkDevice& device)
+    bool sCreateLogicalDevice(const nova::PhysicalDevice& physicalDevice, uint32_t graphicsQueueFamilyIndex, VkDevice& device)
     {
         if (!sSupportsRequiredFeatures(physicalDevice)) {
-            Nova::LogError("GPU '{}' does not support Nova's required bindless Vulkan features.",
+            nova::LogError("GPU '{}' does not support nova's required bindless Vulkan features.",
                            physicalDevice.GetDeviceName());
             return false;
         }
@@ -82,7 +82,7 @@ namespace {
     }
 }
 
-namespace Nova {
+namespace nova {
     Device::Device(const Instance& instance, const PhysicalDevice& physicalDevice)
         : m_instance(&instance), m_physicalDevice(&physicalDevice)
     {
@@ -92,7 +92,7 @@ namespace Nova {
         }
         
         const PhysicalDevice& selectedDevice = *m_physicalDevice;
-        LogInfo("Creating Nova Device with GPU: {} (type: {}, VRAM: {} MB)",
+        LogInfo("Creating nova Device with GPU: {} (type: {}, VRAM: {} MB)",
             selectedDevice.GetDeviceName(),
             static_cast<int>(selectedDevice.GetType()),
             selectedDevice.GetVRAMSize() / (1024 * 1024));

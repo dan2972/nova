@@ -8,7 +8,7 @@
 #include "nv_commandBuffer.h"
 #include "nv_sampler.h"
 
-namespace Nova {
+namespace nova {
     class Device;
     class Instance;
 

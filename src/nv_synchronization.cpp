@@ -2,7 +2,7 @@
 
 #include "nv_device.h"
 
-namespace Nova {
+namespace nova {
     void Fence::Destroy() {
         if (m_fence != VK_NULL_HANDLE) {
             vkDestroyFence(m_device->GetRaw(), m_fence, nullptr);

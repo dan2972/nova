@@ -7,7 +7,7 @@
 #include <utility>
 #include <volk.h>
 
-namespace Nova {
+namespace nova {
     class Device;
     
     class SPIRVData {

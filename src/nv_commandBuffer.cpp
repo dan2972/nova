@@ -4,7 +4,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace Nova {
+namespace nova {
     void CommandBuffer::Destroy()
     {
         if (m_commandBuffer != VK_NULL_HANDLE && m_commandPool != nullptr) {

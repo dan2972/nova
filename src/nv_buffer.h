@@ -4,7 +4,7 @@
 #include "nv_allocator.h"
 #include "nv_helpers.h"
 
-namespace Nova {
+namespace nova {
     using BufferDeviceAddress = VkDeviceAddress;
     using BufferSize = VkDeviceSize;
 

@@ -5,10 +5,10 @@
 namespace {
     uint32_t sDefaultWidth = 1280;
     uint32_t sDefaultHeight = 720;
-    std::unordered_map<GLFWwindow*, Nova::Window*> sWindows;
+    std::unordered_map<GLFWwindow*, nova::Window*> sWindows;
 }
 
-namespace Nova {
+namespace nova {
     Window::Window(const Instance& instance, uint32_t width, uint32_t height, const std::string& title) :
         m_instance(&instance), m_width(width), m_height(height), m_title(title) {
         Init();
@@ -18,7 +18,7 @@ namespace Nova {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
         if (!m_window) {
-            Nova::LogError("Failed to create GLFW window");
+            nova::LogError("Failed to create GLFW window");
             exit(-1);
         }
 

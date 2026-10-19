@@ -9,7 +9,7 @@
 #include "nv_surface.h"
 #include "nv_synchronization.h"
 
-namespace Nova {
+namespace nova {
     enum class ColorSpace {
         SrgbNonlinear = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
         DisplayP3Nonlinear = VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT,

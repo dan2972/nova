@@ -17,7 +17,7 @@ namespace {
     }
 }
 
-namespace Nova {
+namespace nova {
     void ShaderCompiler::WriteSPIRVToDisk(const SPIRVData& spirv, const std::string& outputPath) {
         std::ofstream output(outputPath, std::ios::binary | std::ios::out);
         if (!output) {

@@ -5,7 +5,7 @@
 #include <volk.h>
 #include <vk_mem_alloc.h>
 
-namespace Nova {
+namespace nova {
     class Instance;
     class Device;
 

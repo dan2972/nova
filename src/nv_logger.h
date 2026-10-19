@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace Nova {
+namespace nova {
     class LoggerBase {
     public:
         virtual ~LoggerBase() = default;

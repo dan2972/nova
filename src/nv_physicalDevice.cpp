@@ -1,6 +1,6 @@
 #include "nv_physicalDevice.h"
 
-namespace Nova {
+namespace nova {
     PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
         : m_physicalDevice(physicalDevice)
     {

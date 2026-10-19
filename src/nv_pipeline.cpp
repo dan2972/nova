@@ -1,7 +1,7 @@
 #include "nv_pipeline.h"
 #include "nv_device.h"
 
-namespace Nova {
+namespace nova {
     GraphicsPipelineBuilder &GraphicsPipelineBuilder::AddPushConstantRange(const PushConstantRange &pushConstantRange)
     {
         m_pushConstantRanges.push_back(
