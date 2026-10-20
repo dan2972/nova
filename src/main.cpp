@@ -28,7 +28,7 @@ bool updateSwapchain = false;
 
 int main() {
     nova::Instance instance;
-    nova::Window window(instance, 800, 600, "nova Engine");
+    nova::Window window(instance, 800, 600, "Nova Engine");
     nova::Device device(instance);
 
     nova::FramebufferResizeCallback framebufferResizeCallback = [](nova::Window* window, int width, int height) {
@@ -51,6 +51,8 @@ int main() {
 
     nova::ImageView depthImageView = depthImage.CreateView(nova::ImageAspectFlag::Depth);
 
+    // load model
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -69,6 +71,8 @@ int main() {
         vertices.push_back(v);
         indices.push_back(indices.size());
     }
+
+    // allocate buffers and copy data
 
     nova::AllocationFlag allocationFlags = 
         nova::AllocationFlag::HostAccessSequentialWrite | 
@@ -100,6 +104,8 @@ int main() {
         presentSemaphores[i] = device.CreateSemaphore();
     }
 
+    // load textures and create bindless descriptor set
+
     std::array<nova::Texture, 3> textures;
     std::array<nova::Sampler, 3> samplers;
     std::array<nova::ImageView, 3> textureViews;
@@ -115,6 +121,8 @@ int main() {
         { &textureViews[1], &samplers[1] },
         { &textureViews[2], &samplers[2] }
     });
+
+    // compile shader and create graphics pipeline
 
     nova::ShaderCompiler shaderCompiler;
     shaderCompiler.BeginSession();
@@ -153,7 +161,6 @@ int main() {
     uint64_t lastTime = window.GetTimeSeconds();
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
-    // bool updateSwapchain = false;
     ShaderData shaderData{};
     glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
     glm::vec3 objectRotations[3]{};
@@ -177,22 +184,8 @@ int main() {
         commandBuffer.Begin();
 
         commandBuffer.TransitionImages({
-            nova::ImageTransition{
-                .image = &swapchainImage,
-                .oldLayout = nova::ImageLayout::Undefined,
-                .newLayout = nova::ImageLayout::AttachmentOptimal,
-                .src = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::None},
-                .dst = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::ColorAttachmentRead | nova::AccessFlag::ColorAttachmentWrite},
-                .range = nova::ImageSubresourceRange::Color(),
-            },
-            nova::ImageTransition{
-                .image = &depthImage,
-                .oldLayout = nova::ImageLayout::Undefined,
-                .newLayout = nova::ImageLayout::AttachmentOptimal,
-                .src = {nova::PipelineStageFlag::LateFragmentTests, nova::AccessFlag::DepthStencilAttachmentWrite},
-                .dst = {nova::PipelineStageFlag::EarlyFragmentTests, nova::AccessFlag::DepthStencilAttachmentWrite},
-                .range = nova::ImageSubresourceRange::DepthStencil(),
-            }
+            nova::ImageTransition::ToColorAttachment(swapchainImage, nova::ImageLayout::Undefined),
+            nova::ImageTransition::ToDepthStencilAttachment(depthImage, nova::ImageLayout::Undefined)
         });
 
         commandBuffer.BeginRendering({
@@ -210,14 +203,7 @@ int main() {
         commandBuffer.PushConstants(pipeline.GetPipelineLayout(), nova::ShaderStageFlag::Vertex, 0, sizeof(double), &shaderDataBufferDeviceAddress);
         commandBuffer.DrawIndexed(indexCount, 3);
         commandBuffer.EndRendering();
-        commandBuffer.TransitionImage({
-            .image = &swapchainImage,
-            .oldLayout = nova::ImageLayout::AttachmentOptimal,
-            .newLayout = nova::ImageLayout::PresentSrc,
-            .src = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::ColorAttachmentWrite},
-            .dst = {nova::PipelineStageFlag::ColorAttachmentOutput, nova::AccessFlag::None},
-            .range = nova::ImageSubresourceRange::Color(),
-        });
+        commandBuffer.TransitionImage(nova::ImageTransition::ToPresent(swapchainImage, nova::ImageLayout::AttachmentOptimal));
         commandBuffer.End();
 
         device.SubmitCommandBuffers({

@@ -86,7 +86,7 @@ namespace nova {
     class SyncScope {
     public:
         SyncScope() = default;
-        SyncScope(PipelineStageFlag stage, AccessFlag access)
+        constexpr SyncScope(PipelineStageFlag stage, AccessFlag access)
             : stage(static_cast<VkPipelineStageFlags2>(stage)), access(static_cast<VkAccessFlags2>(access)) {}
 
         static SyncScope TransferWrite() {
@@ -128,6 +128,39 @@ namespace nova {
         SyncScope src{};
         SyncScope dst{};
         ImageSubresourceRange range{};
+
+        static constexpr ImageTransition ToColorAttachment(const Image& image, ImageLayout oldLayout = ImageLayout::Undefined) {
+            return {
+                .image = &image,
+                .oldLayout = oldLayout,
+                .newLayout = ImageLayout::AttachmentOptimal,
+                .src = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::None},
+                .dst = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::ColorAttachmentRead | AccessFlag::ColorAttachmentWrite},
+                .range = ImageSubresourceRange::Color()
+            };
+        }
+
+        static constexpr ImageTransition ToDepthStencilAttachment(const Image& image, ImageLayout oldLayout = ImageLayout::Undefined) {
+            return {
+                .image = &image,
+                .oldLayout = oldLayout,
+                .newLayout = ImageLayout::AttachmentOptimal,
+                .src = {PipelineStageFlag::LateFragmentTests, AccessFlag::DepthStencilAttachmentWrite},
+                .dst = {PipelineStageFlag::EarlyFragmentTests, AccessFlag::DepthStencilAttachmentWrite},
+                .range = ImageSubresourceRange::DepthStencil()
+            };
+        }
+
+        static constexpr ImageTransition ToPresent(const Image& image, ImageLayout oldLayout = ImageLayout::AttachmentOptimal) {
+            return {
+                .image = &image,
+                .oldLayout = oldLayout,
+                .newLayout = ImageLayout::PresentSrc,
+                .src = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::ColorAttachmentWrite},
+                .dst = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::None},
+                .range = ImageSubresourceRange::Color()
+            };
+        }
     };
 
     struct BufferToImageCopyRegion {
