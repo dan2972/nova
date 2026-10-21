@@ -237,14 +237,6 @@ namespace nova {
         }
     };
 
-    struct CommandBufferSubmitInfo {
-        std::vector<const CommandBuffer*> commandBuffers;
-        std::vector<const Semaphore*> waitSemaphores;
-        std::vector<const Semaphore*> signalSemaphores;
-        PipelineStageFlag waitStageMask = PipelineStageFlag::None;
-        const Fence* fence = nullptr;
-    };
-
     class CommandPool {
     public:
         CommandPool() = default;
@@ -342,5 +334,13 @@ namespace nova {
         const CommandPool* m_commandPool = nullptr;
 
         friend class Device;
+    };
+
+    struct CommandBufferSubmitInfo {
+        std::vector<const CommandBuffer*> commandBuffers;
+        std::vector<const Semaphore*> waitSemaphores;
+        std::vector<const Semaphore*> signalSemaphores;
+        PipelineStageFlag waitStageMask = PipelineStageFlag::None;
+        const Fence* fence = nullptr;
     };
 }

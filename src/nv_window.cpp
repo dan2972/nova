@@ -47,6 +47,13 @@ namespace nova {
         glfwSetFramebufferSizeCallback(m_window, DispatchFramebufferResize);
     }
 
+    Extent2D Window::GetFramebufferSize() const
+    {
+        int width, height;
+        glfwGetFramebufferSize(m_window, &width, &height);
+        return Extent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+    }
+
     void Window::DispatchFramebufferResize(GLFWwindow* window, int width, int height)
     {
         const auto it = sWindows.find(window);

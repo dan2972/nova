@@ -40,12 +40,12 @@ int main() {
         .SetDesiredFormat(nova::ImageFormat::B8G8R8A8Unorm)
         .SetDesiredColorSpace(nova::ColorSpace::SrgbNonlinear)
         .SetDesiredPresentMode(nova::SwapchainPresentMode::Fifo)
-        .SetDesiredExtent(window.GetSize())
+        .SetDesiredExtent(window.GetFramebufferSize())
         .build();
 
     nova::Image depthImage = device.CreateImage({
         .format = device.GetSupportedDepthFormats()[0],
-        .extent = { window.GetWidth(), window.GetHeight(), 1 },
+        .extent = { window.GetFramebufferWidth(), window.GetFramebufferHeight(), 1 },
         .usage = nova::ImageUsageFlag::DepthStencilAttachment
     });
 
@@ -76,12 +76,15 @@ int main() {
 
     nova::AllocationFlag allocationFlags = 
         nova::AllocationFlag::HostAccessSequentialWrite | 
-        nova::AllocationFlag::HostAccessAllowTransfer | 
+        // nova::AllocationFlag::HostAccessAllowTransfer | 
         nova::AllocationFlag::Mapped;
-    nova::Buffer vertexBuffer = device.CreateBuffer(vertices.size() * sizeof(Vertex), nova::BufferUsageFlag::VertexBuffer, allocationFlags);
-    nova::Buffer indexBuffer = device.CreateBuffer(indices.size() * sizeof(uint16_t), nova::BufferUsageFlag::IndexBuffer, allocationFlags);
-    memcpy(vertexBuffer.GetMappedData(), vertices.data(), vertices.size() * sizeof(Vertex));
-    memcpy(indexBuffer.GetMappedData(), indices.data(), indices.size() * sizeof(uint16_t));
+    size_t vertexBufferSize = vertices.size() * sizeof(Vertex);
+    size_t indexBufferSize = indices.size() * sizeof(uint16_t);
+    size_t bufferSize = vertexBufferSize + indexBufferSize;
+    nova::Buffer buffer = device.CreateBuffer(bufferSize, nova::BufferUsageFlag::VertexBuffer | nova::BufferUsageFlag::IndexBuffer, allocationFlags);
+    memcpy(buffer.GetMappedData(), vertices.data(), vertices.size() * sizeof(Vertex));
+    memcpy(static_cast<uint8_t*>(buffer.GetMappedData()) + vertexBufferSize, indices.data(), indices.size() * sizeof(uint16_t));
+
 
     nova::CommandPool commandPool = device.CreateCommandPool(nova::CommandPoolCreateFlag::ResetCommandBuffer);
 
@@ -168,9 +171,9 @@ int main() {
         device.WaitForFence(fences[frameIndex]);
         device.ResetFence(fences[frameIndex]);
 
-        const nova::Image swapchainImage = swapchain.AcquireNextImage(imageIndex, &renderSemaphores[frameIndex]);
+        const nova::Image swapchainImage = swapchain.AcquireNextImage(imageIndex, updateSwapchain, &renderSemaphores[frameIndex]);
 
-        nova::Extent2D windowSize = window.GetSize();
+        nova::Extent2D windowSize = window.GetFramebufferSize();
         shaderData.projection = glm::perspective(glm::radians(45.0f), (float)windowSize.width / (float)windowSize.height, 0.1f, 32.0f);
 		shaderData.view = glm::translate(glm::mat4(1.0f), camPos);
 		for (auto i = 0; i < 3; i++) {
@@ -197,8 +200,8 @@ int main() {
         commandBuffer.BindGraphicsPipeline(pipeline);
         commandBuffer.SetScissor({0, 0, windowSize.width, windowSize.height});
         commandBuffer.BindDescriptorSet(pipeline.GetPipelineLayout(), bindlessTextureDescriptors.GetDescriptorSet());
-        commandBuffer.BindVertexBuffer(vertexBuffer);
-        commandBuffer.BindIndexBuffer(indexBuffer, 0, nova::IndexType::Uint16);
+        commandBuffer.BindVertexBuffer(buffer);
+        commandBuffer.BindIndexBuffer(buffer, vertexBufferSize, nova::IndexType::Uint16);
         auto shaderDataBufferDeviceAddress = shaderDataBuffers[frameIndex].GetBufferDeviceAddress();
         commandBuffer.PushConstants(pipeline.GetPipelineLayout(), nova::ShaderStageFlag::Vertex, 0, sizeof(double), &shaderDataBufferDeviceAddress);
         commandBuffer.DrawIndexed(indexCount, 3);
@@ -216,7 +219,7 @@ int main() {
 
         frameIndex = (frameIndex + 1) % maxFramesInFlight;
 
-        device.Present(swapchain, imageIndex, { &presentSemaphores[imageIndex] });
+        device.Present(swapchain, imageIndex, updateSwapchain, { &presentSemaphores[imageIndex] });
 
         window.PollEvents();
         float elapsedTime = window.GetTimeSeconds() - lastTime;
@@ -234,12 +237,12 @@ int main() {
                 .SetDesiredFormat(nova::ImageFormat::B8G8R8A8Unorm)
                 .SetDesiredColorSpace(nova::ColorSpace::SrgbNonlinear)
                 .SetDesiredPresentMode(nova::SwapchainPresentMode::Fifo)
-                .SetDesiredExtent(window.GetSize())
+                .SetDesiredExtent(window.GetFramebufferSize())
                 .build();
             depthImage.Destroy();
             depthImage = device.CreateImage({
                 .format = device.GetSupportedDepthFormats()[0],
-                .extent = { window.GetWidth(), window.GetHeight(), 1 },
+                .extent = { window.GetFramebufferWidth(), window.GetFramebufferHeight(), 1 },
                 .usage = nova::ImageUsageFlag::DepthStencilAttachment
             });
             depthImageView.Destroy();

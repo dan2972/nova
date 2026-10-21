@@ -67,7 +67,7 @@ namespace nova {
 
         void WaitIdle() const;
 
-        void Present(const Swapchain& swapchain, uint32_t imageIndex, const std::vector<const Semaphore*>& waitSemaphores = {}) const;
+        void Present(const Swapchain& swapchain, uint32_t imageIndex, bool& shouldUpdateSwapchain, const std::vector<const Semaphore*>& waitSemaphores = {}) const;
 
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 

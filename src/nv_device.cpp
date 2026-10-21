@@ -351,7 +351,7 @@ namespace nova {
         CheckVk(vkDeviceWaitIdle(m_device));
     }
 
-    void Device::Present(const Swapchain &swapchain, uint32_t imageIndex, const std::vector<const Semaphore *> &waitSemaphores) const
+    void Device::Present(const Swapchain &swapchain, uint32_t imageIndex, bool& shouldUpdateSwapchain, const std::vector<const Semaphore *> &waitSemaphores) const
     {
         std::vector<VkSemaphore> rawWaitSemaphores;
         rawWaitSemaphores.reserve(waitSemaphores.size());
@@ -376,7 +376,11 @@ namespace nova {
 
         VkResult result = vkQueuePresentKHR(GetGraphicsQueue().GetRaw(), &presentInfo);
         if (result != VK_SUCCESS) {
-            LogError("Failed to present swapchain image.");
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                shouldUpdateSwapchain = true;
+            } else {
+                LogError("Failed to present swapchain image.");
+            }
         }
     }
 

@@ -109,12 +109,16 @@ namespace nova {
         return swapchain;
     }
 
-    Image Swapchain::AcquireNextImage(uint32_t& imageIndex, const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
+    Image Swapchain::AcquireNextImage(uint32_t& imageIndex, bool& shouldUpdateSwapchain, const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
     {
         VkResult result = vkAcquireNextImageKHR(m_device->GetRaw(), m_swapchain, timeout, semaphore ? semaphore->GetRaw() : VK_NULL_HANDLE, fence ? fence->GetRaw() : VK_NULL_HANDLE, &imageIndex);
         if (result != VK_SUCCESS) {
-            LogError("Failed to acquire next image from swapchain.");
-            return Image();
+            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+                shouldUpdateSwapchain = true;
+            } else {
+                LogError("Failed to acquire next image from swapchain.");
+                return Image();
+            }
         }
         Image image;
         image.m_device = m_device;

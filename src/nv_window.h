@@ -29,9 +29,12 @@ namespace nova {
 
         const Surface& GetSurface() const { return m_surface; }
 
+        Extent2D GetFramebufferSize() const;
         Extent2D GetSize() const { return Extent2D{m_width, m_height}; }
         uint32_t GetWidth() const { return m_width; }
         uint32_t GetHeight() const { return m_height; }
+        uint32_t GetFramebufferWidth() const { return GetFramebufferSize().width; }
+        uint32_t GetFramebufferHeight() const { return GetFramebufferSize().height; }
     private:
         GLFWwindow* m_window = nullptr;
         uint32_t m_width = 0;
