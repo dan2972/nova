@@ -44,6 +44,21 @@ namespace nova {
 
         BindlessTextureDescriptors(const BindlessTextureDescriptors&) = delete;
         BindlessTextureDescriptors& operator=(const BindlessTextureDescriptors&) = delete;
+        BindlessTextureDescriptors(BindlessTextureDescriptors&& other) noexcept { *this = std::move(other); }
+        BindlessTextureDescriptors& operator=(BindlessTextureDescriptors&& other) noexcept {
+            if (this != &other) {
+                Destroy();
+                m_device = other.m_device;
+                m_descriptorSet = other.m_descriptorSet;
+                m_descriptorPool = other.m_descriptorPool;
+                m_descriptorSetLayout = other.m_descriptorSetLayout;
+                other.m_device = nullptr;
+                other.m_descriptorSet = VK_NULL_HANDLE;
+                other.m_descriptorPool = VK_NULL_HANDLE;
+                other.m_descriptorSetLayout = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
 
         DescriptorSetLayout GetDescriptorSetLayout() const;
         DescriptorSet GetDescriptorSet() const;
