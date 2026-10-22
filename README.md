@@ -16,7 +16,7 @@ This project uses C++20 with the following dependencies managed throuch vcpkg:
 
 ## Example Usage
 
-An example working project following the "[How to Vulkan](https://www.howtovulkan.com/)" tutorial can be found in [this](https://github.com/dan2972/nova_example) repository. Below is an incomplete example highlighting the level of abstraction of the library.
+An example working project following the "[How to Vulkan](https://www.howtovulkan.com/)" tutorial can be found in [this repository](https://github.com/dan2972/nova_example). Below is an incomplete example highlighting the level of abstraction of the library.
 
 ```cpp
 #include "nova.h"
