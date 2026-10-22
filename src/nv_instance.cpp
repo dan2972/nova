@@ -3,16 +3,50 @@
 
 #include <vector>
 #include <algorithm>
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 namespace {
-    static bool sVolkLoaded = false;
-    static bool sGLFWInitialized = false;
+    static bool sNovaInitialized = false;
     static bool sValidationLayersEnabled = true;
 
     const std::vector<const char*> sValidationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
+
+    bool sInitializeNova()
+    {
+        if (sNovaInitialized) {
+            return true;
+        }
+
+        if (!SDL_Init(SDL_INIT_VIDEO)) {
+            nova::LogError("Failed to initialize SDL: {}", SDL_GetError());
+            return false;
+        }
+        if (!SDL_Vulkan_LoadLibrary(nullptr)) {
+            nova::LogError("Failed to load Vulkan library: {}", SDL_GetError());
+            return false;
+        }
+        if (volkInitialize() != VK_SUCCESS) {
+            nova::LogError("Failed to initialize Volk");
+            return false;
+        }
+        sNovaInitialized = true;
+        return true;
+    }
+
+    void sShutdownNova()
+    {
+        if (!sNovaInitialized) {
+            return;
+        }
+
+        nova::DestroyAllocator();
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        SDL_Quit();
+        sNovaInitialized = false;
+    }
 
     bool sCheckValidationLayerSupport() {
         uint32_t layerCount;
@@ -88,21 +122,14 @@ namespace {
 
     void sGetInstanceExtensions(std::vector<const char*>& extensions)
     {
-        if (!sGLFWInitialized) {
-            if (!glfwInit()) {
-                nova::LogError("Failed to initialize GLFW");
-                exit(-1);
-            }
-            if (!glfwVulkanSupported()) {
-                nova::LogError("GLFW: Vulkan not supported");
-                exit(-1);
-            }
-            sGLFWInitialized = true;
+        if (!SDL_WasInit(SDL_INIT_VIDEO)) {
+            nova::LogError("SDL was not initialized!");
+            return;
         }
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        for (uint32_t i = 0; i < glfwExtensionCount; i++) {
-            extensions.push_back(glfwExtensions[i]);
+        uint32_t sdlExtensionCount = 0;
+        auto sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&sdlExtensionCount);
+        for (uint32_t i = 0; i < sdlExtensionCount; i++) {
+            extensions.push_back(sdlExtensions[i]);
         }
 
         if (PlatformDefined(Platform::MacOS)) {
@@ -158,11 +185,6 @@ namespace {
 
     void sCreateInstance(VkInstance* instance, const std::string& applicationName)
     {
-        if (!sVolkLoaded) {
-            volkInitialize();
-            sVolkLoaded = true;
-        }
-
         if (sValidationLayersEnabled && !sCheckValidationLayerSupport()) {
             nova::LogError("Validation layers requested, but not available! Continueing without validation layers.");
             sValidationLayersEnabled = false;
@@ -219,10 +241,17 @@ namespace nova {
             sDestroyDebugMessenger(*this, m_debugMessenger);
         }
         vkDestroyInstance(m_instance, nullptr);
+        sShutdownNova();
     }
 
     void Instance::Init(const std::string& applicationName)
     {
+        if (!sNovaInitialized) {
+            if (!sInitializeNova()) {
+                LogError("Failed to initialize nova.");
+                exit(-1);
+            }
+        }
         sCreateInstance(&m_instance, applicationName);
         volkLoadInstance(m_instance);
         QueryPhysicalDevices();

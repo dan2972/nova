@@ -25,6 +25,7 @@ struct ShaderData {
 static constexpr uint32_t maxFramesInFlight = 2;
 
 bool updateSwapchain = false;
+uint32_t selectedObject = 1;
 
 int main() {
     nova::Instance instance;
@@ -161,12 +162,24 @@ int main() {
     nova::GraphicsPipeline pipeline = pipelineBuilder.Build();
 
     bool quit = false;
-    uint64_t lastTime = window.GetTimeSeconds();
+    uint64_t lastTime = window.GetTimeMilliseconds();
     uint32_t frameIndex = 0;
     uint32_t imageIndex = 0;
     ShaderData shaderData{};
     glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
     glm::vec3 objectRotations[3]{};
+
+    nova::KeyInputCallback keyCallback = [](nova::Window* window, nova::KeyCode key, nova::KeyModifierFlag mods, nova::KeyAction action) {
+        if (action == nova::KeyAction::Press) {
+            if (key == nova::KeyCode::Plus || key == nova::KeyCode::Equals) {
+                selectedObject = (selectedObject + 1) % 3;
+            } else if (key == nova::KeyCode::Minus || key == nova::KeyCode::Underscore) {
+                selectedObject = (selectedObject + 2) % 3;
+            }
+        }
+    };
+    window.SetKeyInputCallback(keyCallback);
+
     while (!quit) {
         device.WaitForFence(fences[frameIndex]);
         device.ResetFence(fences[frameIndex]);
@@ -180,6 +193,7 @@ int main() {
 			auto instancePos = glm::vec3((float)(i - 1) * 3.0f, 0.0f, 0.0f);
 			shaderData.model[i] = glm::translate(glm::mat4(1.0f), instancePos) * glm::mat4_cast(glm::quat(objectRotations[i]));
 		}
+        shaderData.selected = selectedObject;
 		memcpy(shaderDataBuffers[frameIndex].GetMappedData(), &shaderData, sizeof(ShaderData));
 
         nova::CommandBuffer& commandBuffer = commandBuffers[frameIndex];
@@ -222,12 +236,27 @@ int main() {
         device.Present(swapchain, imageIndex, updateSwapchain, { &presentSemaphores[imageIndex] });
 
         window.PollEvents();
-        float elapsedTime = window.GetTimeSeconds() - lastTime;
-        lastTime = window.GetTimeSeconds();
+        float elapsedTime = (window.GetTimeMilliseconds() - lastTime) / 1000.0f;
+        lastTime = window.GetTimeMilliseconds();
 
         if (window.ShouldClose()) {
             quit = true;
         }
+
+        if (window.GetKeyDown(nova::KeyCode::Escape)) {
+            quit = true;
+        }
+
+        if (window.GetMouseButtonDown(nova::MouseButton::Left)) {
+            double dx, dy;
+            window.GetMouseMoved(dx, dy);
+            objectRotations[shaderData.selected].x -= (float)dy * elapsedTime;
+            objectRotations[shaderData.selected].y += (float)dx * elapsedTime;
+        }
+
+        double wheelDx, wheelDy;
+        window.GetMouseWheelScrolled(wheelDx, wheelDy);
+        camPos.z += (float)wheelDy * elapsedTime;
 
         if (updateSwapchain) {
             updateSwapchain = false;
