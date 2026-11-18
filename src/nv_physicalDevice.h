@@ -10,6 +10,7 @@
 namespace nova {
     class PhysicalDevice {
     public:
+        PhysicalDevice() = default;
         PhysicalDevice(VkPhysicalDevice physicalDevice);
         PhysicalDevice(const PhysicalDevice&) = default;
         PhysicalDevice(PhysicalDevice&&) noexcept = default;

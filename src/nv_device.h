@@ -29,14 +29,34 @@ namespace nova {
 
     class Device {
     public:
+        Device() = default;
         Device(const Instance& instance);
         Device(const Instance& instance, const PhysicalDevice& physicalDevice);
         ~Device();
 
         Device(const Device&) = delete;
         Device& operator=(const Device&) = delete;
-        Device(Device&&) = delete;
-        Device& operator=(Device&&) = delete;
+        Device(Device&& other)
+            : m_instance(other.m_instance)
+            , m_physicalDevice(other.m_physicalDevice)
+            , m_device(other.m_device)
+        {
+            other.m_instance = nullptr;
+            other.m_physicalDevice = nullptr;
+            other.m_device = VK_NULL_HANDLE;
+        }
+        Device& operator=(Device&& other)
+        {
+            if (this != &other) {
+                m_instance = other.m_instance;
+                m_physicalDevice = other.m_physicalDevice;
+                m_device = other.m_device;
+                other.m_instance = nullptr;
+                other.m_physicalDevice = nullptr;
+                other.m_device = VK_NULL_HANDLE;
+            }
+            return *this;
+        }
 
         VkDevice GetRaw() const { return m_device; }
 
