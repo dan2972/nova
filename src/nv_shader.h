@@ -7,8 +7,20 @@
 #include <utility>
 #include <volk.h>
 
+#include "nv_helpers.h"
+
 namespace nova {
     class Device;
+
+    enum class ShaderStageFlag : VkShaderStageFlags {
+        None = 0,
+        Vertex = VK_SHADER_STAGE_VERTEX_BIT,
+        Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
+        Compute = VK_SHADER_STAGE_COMPUTE_BIT,
+        Geometry = VK_SHADER_STAGE_GEOMETRY_BIT
+    };
+
+    ENABLE_BITMASK_OPERATORS(ShaderStageFlag, VkShaderStageFlags)
     
     class SPIRVData {
     public:

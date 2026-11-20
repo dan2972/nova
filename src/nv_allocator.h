@@ -31,6 +31,7 @@ namespace nova {
             return *this;
         }
 
+        void Flush(VkDeviceSize offset, VkDeviceSize size) const;
         void Destroy();
     };
 

@@ -13,9 +13,9 @@ namespace nova {
         }
     }
 
-    CommandBuffer& CommandBuffer::TransitionImage(const ImageTransition& transition)
+    VkImageMemoryBarrier2 CommandBuffer::ToVkImageMemoryBarrier(const ImageTransition& transition)
     {
-        const VkImageMemoryBarrier2 barrier{
+        return {
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
             .srcStageMask = transition.src.stage,
             .srcAccessMask = transition.src.access,
@@ -23,6 +23,8 @@ namespace nova {
             .dstAccessMask = transition.dst.access,
             .oldLayout = static_cast<VkImageLayout>(transition.oldLayout),
             .newLayout = static_cast<VkImageLayout>(transition.newLayout),
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .image = transition.image->GetRaw(),
             .subresourceRange = {
                 .aspectMask = static_cast<VkImageAspectFlags>(transition.range.aspect),
@@ -32,6 +34,11 @@ namespace nova {
                 .layerCount = transition.range.layerCount,
             },
         };
+    }
+
+    CommandBuffer& CommandBuffer::TransitionImage(const ImageTransition& transition)
+    {
+        const VkImageMemoryBarrier2 barrier = ToVkImageMemoryBarrier(transition);
         const VkDependencyInfo dependency{
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
             .imageMemoryBarrierCount = 1,
@@ -46,29 +53,36 @@ namespace nova {
         std::vector<VkImageMemoryBarrier2> barriers;
         barriers.reserve(imageTransitions.size());
         for (const ImageTransition& transition : imageTransitions) {
-            barriers.push_back({
-                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-                .srcStageMask = transition.src.stage,
-                .srcAccessMask = transition.src.access,
-                .dstStageMask = transition.dst.stage,
-                .dstAccessMask = transition.dst.access,
-                .oldLayout = static_cast<VkImageLayout>(transition.oldLayout),
-                .newLayout = static_cast<VkImageLayout>(transition.newLayout),
-                .image = transition.image->GetRaw(),
-                .subresourceRange = {
-                    .aspectMask = static_cast<VkImageAspectFlags>(transition.range.aspect),
-                    .baseMipLevel = transition.range.baseMipLevel,
-                    .levelCount = transition.range.levelCount,
-                    .baseArrayLayer = transition.range.baseArrayLayer,
-                    .layerCount = transition.range.layerCount,
-                },
-            });
+            barriers.push_back(ToVkImageMemoryBarrier(transition));
         }
 
         const VkDependencyInfo dependency{
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
             .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
             .pImageMemoryBarriers = barriers.data(),
+        };
+        vkCmdPipelineBarrier2(m_commandBuffer, &dependency);
+        return *this;
+    }
+
+    CommandBuffer& CommandBuffer::BarrierBuffer(const Buffer& buffer, SyncScope src, SyncScope dst, BufferSize offset, BufferSize size)
+    {
+        const VkBufferMemoryBarrier2 barrier{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .srcStageMask = src.stage,
+            .srcAccessMask = src.access,
+            .dstStageMask = dst.stage,
+            .dstAccessMask = dst.access,
+            .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+            .buffer = buffer.GetRaw(),
+            .offset = offset,
+            .size = size
+        };
+        const VkDependencyInfo dependency{
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .bufferMemoryBarrierCount = 1,
+            .pBufferMemoryBarriers = &barrier
         };
         vkCmdPipelineBarrier2(m_commandBuffer, &dependency);
         return *this;
@@ -83,12 +97,15 @@ namespace nova {
         for (const BufferToImageCopyRegion& region : regions) {
             vkRegions.push_back({
                 .bufferOffset = region.bufferOffset,
+                .bufferRowLength = region.bufferRowLength,
+                .bufferImageHeight = region.bufferImageHeight,
                 .imageSubresource = {
                     .aspectMask = static_cast<VkImageAspectFlags>(region.aspect),
                     .mipLevel = region.mipLevel,
                     .baseArrayLayer = region.baseArrayLayer,
                     .layerCount = region.layerCount,
                 },
+                .imageOffset = {region.imageOffsetX, region.imageOffsetY, 0},
                 .imageExtent = region.extent,
             });
         }
@@ -96,6 +113,21 @@ namespace nova {
         vkCmdCopyBufferToImage(m_commandBuffer, source.GetRaw(), destination.GetRaw(),
                                static_cast<VkImageLayout>(destinationLayout),
                                static_cast<uint32_t>(vkRegions.size()), vkRegions.data());
+        return *this;
+    }
+
+    CommandBuffer& CommandBuffer::BlitImage(const Image& source, const Image& destination,
+                                           ImageLayout sourceLayout, ImageLayout destinationLayout, SamplerFilter filter)
+    {
+        const VkImageBlit region{
+            .srcSubresource = { .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .layerCount = 1 },
+            .srcOffsets = {{0, 0, 0}, {static_cast<int32_t>(source.GetWidth()), static_cast<int32_t>(source.GetHeight()), 1}},
+            .dstSubresource = { .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .layerCount = 1 },
+            .dstOffsets = {{0, 0, 0}, {static_cast<int32_t>(destination.GetWidth()), static_cast<int32_t>(destination.GetHeight()), 1}}
+        };
+        vkCmdBlitImage(m_commandBuffer, source.GetRaw(), static_cast<VkImageLayout>(sourceLayout),
+                       destination.GetRaw(), static_cast<VkImageLayout>(destinationLayout), 1, &region,
+                       static_cast<VkFilter>(filter));
         return *this;
     }
 
@@ -171,9 +203,15 @@ namespace nova {
         return *this;
     }
 
+    CommandBuffer& CommandBuffer::BindComputePipeline(const ComputePipeline& pipeline)
+    {
+        vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.m_pipeline);
+        return *this;
+    }
+
     CommandBuffer& CommandBuffer::BindDescriptorSet(const PipelineLayout &pipelineLayout, const DescriptorSet &descriptorSet, uint32_t setIndex)
     {
-        vkCmdBindDescriptorSets(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout.GetRaw(), setIndex, 1, &descriptorSet.GetRaw(), 0, nullptr);
+        vkCmdBindDescriptorSets(m_commandBuffer, pipelineLayout.m_bindPoint, pipelineLayout.GetRaw(), setIndex, 1, &descriptorSet.GetRaw(), 0, nullptr);
         return *this;
     }
 
@@ -193,6 +231,18 @@ namespace nova {
     CommandBuffer& CommandBuffer::PushConstants(const PipelineLayout &pipelineLayout, ShaderStageFlag stageFlags, uint32_t offset, uint32_t size, const void *pValues)
     {
         vkCmdPushConstants(m_commandBuffer, pipelineLayout.GetRaw(), static_cast<VkShaderStageFlags>(stageFlags), offset, size, pValues);
+        return *this;
+    }
+
+    CommandBuffer& CommandBuffer::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+    {
+        vkCmdDispatch(m_commandBuffer, groupCountX, groupCountY, groupCountZ);
+        return *this;
+    }
+
+    CommandBuffer& CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+    {
+        vkCmdDraw(m_commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
         return *this;
     }
 

@@ -49,6 +49,7 @@ namespace nova {
                 m_swapchain = other.m_swapchain;
                 m_format = other.m_format;
                 m_colorSpace = other.m_colorSpace;
+                m_usageFlags = other.m_usageFlags;
                 m_presentMode = other.m_presentMode;
                 m_extent = other.m_extent;
                 m_images = std::move(other.m_images);
@@ -66,6 +67,7 @@ namespace nova {
         VkSwapchainKHR GetRaw() const { return m_swapchain; }
         ImageFormat GetFormat() const { return m_format; }
         ColorSpace GetColorSpace() const { return m_colorSpace; }
+        ImageUsageFlag GetUsageFlags() const { return m_usageFlags; }
         SwapchainPresentMode GetPresentMode() const { return m_presentMode; }
         uint32_t GetWidth() const { return m_extent.width; }
         uint32_t GetHeight() const { return m_extent.height; }
@@ -76,6 +78,7 @@ namespace nova {
         VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
         ImageFormat m_format;
         ColorSpace m_colorSpace;
+        ImageUsageFlag m_usageFlags = ImageUsageFlag::None;
         SwapchainPresentMode m_presentMode;
         Extent2D m_extent;
         std::vector<VkImage> m_images;
@@ -94,6 +97,8 @@ namespace nova {
         SwapchainBuilder& SetDesiredColorSpace(ColorSpace colorSpace);
 
         SwapchainBuilder& SetDesiredPresentMode(SwapchainPresentMode presentMode);
+
+        SwapchainBuilder& SetAdditionalUsage(ImageUsageFlag usage);
 
         SwapchainBuilder& SetDesiredExtent(const Extent2D& extent);
 

@@ -39,7 +39,7 @@ namespace nova {
             if (m_format == ImageFormat::D32SfloatS8Uint || m_format == ImageFormat::D24UnormS8Uint) {
                 aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
             }
-        } else if (usageFlags & VK_IMAGE_USAGE_SAMPLED_BIT) {
+        } else if (usageFlags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT)) {
             aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         }
 

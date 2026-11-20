@@ -4,19 +4,21 @@
 #include <span>
 #include <utility>
 #include <type_traits>
+#include <vector>
 
 #include "nv_buffer.h"
 #include "nv_helpers.h"
 #include "nv_image.h"
+#include "nv_sampler.h"
 #include "nv_synchronization.h"
 #include "nv_shader.h"
 
 namespace nova {
     class Device;
+    class ComputePipeline;
     class GraphicsPipeline;
     class PipelineLayout;
     class DescriptorSet;
-    enum class ShaderStageFlag : VkShaderStageFlags;
 
     enum class CommandPoolCreateFlag : VkCommandPoolCreateFlags {
         None = 0,
@@ -38,6 +40,8 @@ namespace nova {
 
     enum class ImageLayout {
         Undefined = VK_IMAGE_LAYOUT_UNDEFINED,
+        General = VK_IMAGE_LAYOUT_GENERAL,
+        TransferSrc = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         TransferDst = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         ReadOnly = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
         AttachmentOptimal = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
@@ -46,19 +50,32 @@ namespace nova {
 
     enum class PipelineStageFlag : VkPipelineStageFlags2 {
         None = VK_PIPELINE_STAGE_2_NONE,
+        AllCommands = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
         Transfer = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
         ColorAttachmentOutput = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         EarlyFragmentTests = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
         LateFragmentTests = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        FragmentShader = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+        VertexShader = VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT,
+        FragmentShader = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+        ComputeShader = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+        VertexAttributeInput = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT,
+        IndexInput = VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT,
+        Host = VK_PIPELINE_STAGE_2_HOST_BIT
     };
 
     ENABLE_BITMASK_OPERATORS(PipelineStageFlag, VkPipelineStageFlags2)
 
     enum class AccessFlag : VkAccessFlags2 {
         None = VK_ACCESS_2_NONE,
+        TransferRead = VK_ACCESS_2_TRANSFER_READ_BIT,
         TransferWrite = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+        UniformRead = VK_ACCESS_2_UNIFORM_READ_BIT,
         ShaderSampledRead = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+        ShaderStorageRead = VK_ACCESS_2_SHADER_STORAGE_READ_BIT,
+        ShaderStorageWrite = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT,
+        VertexAttributeRead = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
+        IndexRead = VK_ACCESS_2_INDEX_READ_BIT,
+        HostRead = VK_ACCESS_2_HOST_READ_BIT,
         ColorAttachmentRead = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
         ColorAttachmentWrite = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
         DepthStencilAttachmentRead = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
@@ -89,11 +106,19 @@ namespace nova {
         constexpr SyncScope(PipelineStageFlag stage, AccessFlag access)
             : stage(static_cast<VkPipelineStageFlags2>(stage)), access(static_cast<VkAccessFlags2>(access)) {}
 
-        static SyncScope TransferWrite() {
+        static constexpr SyncScope TransferRead() {
+            return SyncScope(PipelineStageFlag::Transfer, AccessFlag::TransferRead);
+        }
+
+        static constexpr SyncScope TransferWrite() {
             return SyncScope(PipelineStageFlag::Transfer, AccessFlag::TransferWrite);
         }
 
-        static SyncScope FragmentShaderRead() {
+        static constexpr SyncScope ComputeShaderWrite() {
+            return SyncScope(PipelineStageFlag::ComputeShader, AccessFlag::ShaderStorageWrite);
+        }
+
+        static constexpr SyncScope FragmentShaderRead() {
             return SyncScope(PipelineStageFlag::FragmentShader, AccessFlag::ShaderSampledRead);
         }
     
@@ -151,15 +176,20 @@ namespace nova {
             };
         }
 
-        static constexpr ImageTransition ToPresent(const Image& image, ImageLayout oldLayout = ImageLayout::AttachmentOptimal) {
+        static constexpr ImageTransition ToPresent(const Image& image, ImageLayout oldLayout, SyncScope src) {
             return {
                 .image = &image,
                 .oldLayout = oldLayout,
                 .newLayout = ImageLayout::PresentSrc,
-                .src = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::ColorAttachmentWrite},
-                .dst = {PipelineStageFlag::ColorAttachmentOutput, AccessFlag::None},
+                .src = src,
                 .range = ImageSubresourceRange::Color()
             };
+        }
+
+        static constexpr ImageTransition ToPresent(const Image& image, ImageLayout oldLayout = ImageLayout::AttachmentOptimal) {
+            return ToPresent(image, oldLayout, oldLayout == ImageLayout::TransferDst
+                ? SyncScope::TransferWrite()
+                : SyncScope{PipelineStageFlag::ColorAttachmentOutput, AccessFlag::ColorAttachmentWrite});
         }
     };
 
@@ -170,6 +200,10 @@ namespace nova {
         uint32_t baseArrayLayer = 0;
         uint32_t layerCount = 1;
         Extent3D extent{1, 1, 1};
+        uint32_t bufferRowLength = 0;
+        uint32_t bufferImageHeight = 0;
+        int32_t imageOffsetX = 0;
+        int32_t imageOffsetY = 0;
     };
 
     struct ClearValue {
@@ -314,21 +348,31 @@ namespace nova {
 
         CommandBuffer& TransitionImage(const ImageTransition& transition);
         CommandBuffer& TransitionImages(const std::vector<ImageTransition>& imageTransitions);
+        CommandBuffer& BarrierBuffer(const Buffer& buffer, SyncScope src, SyncScope dst,
+                                     BufferSize offset = 0, BufferSize size = WholeBufferSize);
         CommandBuffer& CopyBufferToImage(const Buffer& source, const Image& destination,
-                               ImageLayout destinationLayout,
-                               std::span<const BufferToImageCopyRegion> regions);
+                                         ImageLayout destinationLayout, std::span<const BufferToImageCopyRegion> regions);
+        CommandBuffer& BlitImage(const Image& source, const Image& destination,
+                                 ImageLayout sourceLayout = ImageLayout::TransferSrc,
+                                 ImageLayout destinationLayout = ImageLayout::TransferDst,
+                                 SamplerFilter filter = SamplerFilter::Nearest);
         CommandBuffer& BeginRendering(const std::vector<RenderAttachmentInfo>& attachmentInfos, const Extent2D& renderArea);
         CommandBuffer& SetViewport(const Viewport& viewport);
         CommandBuffer& SetScissor(const Rect2D& scissor);
         CommandBuffer& BindGraphicsPipeline(const GraphicsPipeline& pipeline);
+        CommandBuffer& BindComputePipeline(const ComputePipeline& pipeline);
         CommandBuffer& BindDescriptorSet(const PipelineLayout& pipelineLayout, const DescriptorSet& descriptorSet, uint32_t setIndex = 0);
         CommandBuffer& BindVertexBuffer(const Buffer& vertexBuffer, BufferSize offset = 0);
         CommandBuffer& BindIndexBuffer(const Buffer& indexBuffer, BufferSize offset = 0, IndexType indexType = IndexType::Uint32);
         CommandBuffer& PushConstants(const PipelineLayout& pipelineLayout, ShaderStageFlag stageFlags, uint32_t offset, uint32_t size, const void* pValues);
+        CommandBuffer& Dispatch(uint32_t groupCountX, uint32_t groupCountY = 1, uint32_t groupCountZ = 1);
+        CommandBuffer& Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
         CommandBuffer& DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, int32_t vertexOffset = 0, uint32_t firstInstance = 0);
         CommandBuffer& EndRendering();
 
     private:
+        static VkImageMemoryBarrier2 ToVkImageMemoryBarrier(const ImageTransition& transition);
+
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         const Device* m_device = nullptr;
         const CommandPool* m_commandPool = nullptr;
@@ -340,7 +384,7 @@ namespace nova {
         std::vector<const CommandBuffer*> commandBuffers;
         std::vector<const Semaphore*> waitSemaphores;
         std::vector<const Semaphore*> signalSemaphores;
-        PipelineStageFlag waitStageMask = PipelineStageFlag::None;
+        PipelineStageFlag waitStageMask = PipelineStageFlag::AllCommands;
         const Fence* fence = nullptr;
     };
 }

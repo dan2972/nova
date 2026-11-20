@@ -7,6 +7,7 @@
 namespace nova {
     using BufferDeviceAddress = VkDeviceAddress;
     using BufferSize = VkDeviceSize;
+    inline constexpr BufferSize WholeBufferSize = VK_WHOLE_SIZE;
 
     class Device;
 
@@ -57,6 +58,9 @@ namespace nova {
         }
 
         void* GetMappedData() const { return m_allocation.allocationInfo.pMappedData; }
+        void FlushMappedRange(BufferSize offset = 0, BufferSize size = WholeBufferSize) const {
+            m_allocation.Flush(offset, size);
+        }
         VkBuffer GetRaw() const { return m_allocation.buffer; }
 
         BufferSize GetSize() const { return m_size; }

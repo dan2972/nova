@@ -92,6 +92,8 @@ namespace nova {
         uint32_t GetHeight() const { return m_extent.height; }
         uint32_t GetDepth() const { return m_extent.depth; }
         ImageFormat GetFormat() const { return m_format; }
+        ImageUsageFlag GetUsageFlags() const { return m_usageFlags; }
+        explicit operator bool() const { return m_allocation.image != VK_NULL_HANDLE; }
         VkImage GetRaw() const { return m_allocation.image; }
 
         ImageView CreateView() const;

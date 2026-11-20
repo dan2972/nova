@@ -27,6 +27,10 @@ namespace {
 
 namespace nova {
 
+    void BufferAllocation::Flush(VkDeviceSize offset, VkDeviceSize size) const {
+        CheckVk(vmaFlushAllocation(s_allocator, allocation, offset, size));
+    }
+
     void BufferAllocation::Destroy() {
         if (allocation != VK_NULL_HANDLE) {
             vmaDestroyBuffer(s_allocator, buffer, allocation);

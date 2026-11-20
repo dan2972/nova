@@ -34,6 +34,7 @@ namespace nova {
         std::string GetDeviceName() const { return m_deviceName; }
         size_t GetVRAMSize() const { return m_vramSize; }
         uint32_t GetGraphicsQueueFamilyIndex() const { return m_graphicsQueueFamilyIndex; }
+        bool SupportsCompute() const { return m_supportsCompute; }
 
         std::vector<VkQueueFamilyProperties> GetQueueFamilies() const { return m_queueFamilies; }
         std::vector<ImageFormat> GetSupportedDepthFormats() const;
@@ -44,6 +45,7 @@ namespace nova {
         VkPhysicalDevice m_physicalDevice;
         std::vector<VkQueueFamilyProperties> m_queueFamilies;
         uint32_t m_graphicsQueueFamilyIndex = 0;
+        bool m_supportsCompute = false;
         GPUType m_type;
         std::string m_deviceName;
         size_t m_vramSize;

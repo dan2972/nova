@@ -3,6 +3,7 @@
 #include "nv_helpers.h"
 
 #include <array>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <utility>
@@ -70,13 +71,13 @@ namespace nova {
         }
 
         input.seekg(0, std::ios::beg);
-        std::vector<uint32_t> data(size / sizeof(uint32_t));
-        if (!input.read(reinterpret_cast<char*>(data.data()), size)) {
+        auto data = std::make_shared<std::vector<uint32_t>>(size / sizeof(uint32_t));
+        if (!input.read(reinterpret_cast<char*>(data->data()), size)) {
             LogError("Failed to read SPIR-V input file: {}", path);
             return SPIRVData();
         }
 
-        return SPIRVData(std::make_shared<std::vector<uint32_t>>(std::move(data)), static_cast<size_t>(size));
+        return SPIRVData(std::shared_ptr<const void>(data, data->data()), static_cast<size_t>(size));
     }
 
     void ShaderCompiler::BeginSession() {
@@ -109,11 +110,16 @@ namespace nova {
 
     SPIRVData ShaderCompiler::CompileToSPIRVFromShaderPath(const std::string& path)
     {
+        const std::string moduleName = std::filesystem::absolute(path).lexically_normal().generic_string();
+        Slang::ComPtr<slang::IBlob> diagnostics;
         Slang::ComPtr<slang::IModule> slangModule{
-            m_slangSession->loadModuleFromSource("triangle", path.c_str(), nullptr, nullptr)
+            m_slangSession->loadModuleFromSource(moduleName.c_str(), path.c_str(), nullptr, diagnostics.writeRef())
         };
         if (!slangModule) {
             LogError("Slang failed to load module: {}", path);
+            if (diagnostics) {
+                LogError("{}", std::string_view(static_cast<const char*>(diagnostics->getBufferPointer()), diagnostics->getBufferSize()));
+            }
             return SPIRVData();
         }
 

@@ -31,16 +31,6 @@ namespace nova {
         UByte4Norm = VK_FORMAT_R8G8B8A8_UNORM,
     };
 
-    enum class ShaderStageFlag : VkShaderStageFlags {
-        None = 0,
-        Vertex = VK_SHADER_STAGE_VERTEX_BIT,
-        Fragment = VK_SHADER_STAGE_FRAGMENT_BIT,
-        Compute = VK_SHADER_STAGE_COMPUTE_BIT,
-        Geometry = VK_SHADER_STAGE_GEOMETRY_BIT
-    };
-
-    ENABLE_BITMASK_OPERATORS(ShaderStageFlag, VkShaderStageFlags)
-
     struct VertexAttributeDescription {
         VertexFormat format;
         uint32_t offset;
@@ -65,7 +55,11 @@ namespace nova {
         const VkPipelineLayout& GetRaw() const { return m_pipelineLayout; }
     private:
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+        VkPipelineBindPoint m_bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
+        friend class CommandBuffer;
+        friend class ComputePipelineBuilder;
+        friend class ComputePipeline;
         friend class GraphicsPipelineBuilder;
         friend class GraphicsPipeline;
     };
@@ -117,5 +111,43 @@ namespace nova {
         ImageFormat m_depthFormat;
 
         ImageFormat m_colorFormat = ImageFormat::B8G8R8A8Unorm;
+    };
+
+    class ComputePipeline {
+    public:
+        ComputePipeline() = default;
+        ~ComputePipeline() { Destroy(); }
+
+        ComputePipeline(const ComputePipeline&) = delete;
+        ComputePipeline& operator=(const ComputePipeline&) = delete;
+        ComputePipeline(ComputePipeline&& other) noexcept { *this = std::move(other); }
+        ComputePipeline& operator=(ComputePipeline&& other) noexcept;
+
+        const PipelineLayout& GetPipelineLayout() const { return m_pipelineLayout; }
+
+        void Destroy();
+    private:
+        const Device* m_device = nullptr;
+        PipelineLayout m_pipelineLayout;
+        VkPipeline m_pipeline = VK_NULL_HANDLE;
+        friend class CommandBuffer;
+        friend class ComputePipelineBuilder;
+    };
+
+    class ComputePipelineBuilder {
+    public:
+        ComputePipelineBuilder(const Device& device) : m_device(device) {}
+
+        ComputePipelineBuilder& AddPushConstantRange(const PushConstantRange& pushConstantRange);
+        ComputePipelineBuilder& AddDescriptorSetLayout(const DescriptorSetLayout& descriptorSetLayout);
+        ComputePipelineBuilder& SetShaderStage(const ShaderModule& shaderModule, const std::string& entryPoint = "main");
+
+        ComputePipeline Build() const;
+    private:
+        const Device& m_device;
+        std::vector<VkPushConstantRange> m_pushConstantRanges;
+        std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
+        VkShaderModule m_shaderModule = VK_NULL_HANDLE;
+        std::string m_entryPoint;
     };
 }

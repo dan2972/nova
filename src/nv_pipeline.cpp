@@ -1,16 +1,39 @@
 #include "nv_pipeline.h"
 #include "nv_device.h"
 
+#include <stdexcept>
+
+namespace {
+    VkPushConstantRange ToVkPushConstantRange(const nova::PushConstantRange& range)
+    {
+        return {
+            .stageFlags = static_cast<VkShaderStageFlags>(range.stageFlags),
+            .offset = range.offset,
+            .size = range.size
+        };
+    }
+
+    VkPipelineLayout CreatePipelineLayout(const nova::Device& device,
+                                          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+                                          const std::vector<VkPushConstantRange>& pushConstantRanges)
+    {
+        const VkPipelineLayoutCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+            .setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
+            .pSetLayouts = descriptorSetLayouts.data(),
+            .pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size()),
+            .pPushConstantRanges = pushConstantRanges.data()
+        };
+        VkPipelineLayout layout = VK_NULL_HANDLE;
+        CheckVk(vkCreatePipelineLayout(device.GetRaw(), &createInfo, nullptr, &layout));
+        return layout;
+    }
+}
+
 namespace nova {
     GraphicsPipelineBuilder &GraphicsPipelineBuilder::AddPushConstantRange(const PushConstantRange &pushConstantRange)
     {
-        m_pushConstantRanges.push_back(
-            {
-                .stageFlags = static_cast<VkShaderStageFlags>(pushConstantRange.stageFlags),
-                .offset = pushConstantRange.offset,
-                .size = pushConstantRange.size
-            }
-        );
+        m_pushConstantRanges.push_back(ToVkPushConstantRange(pushConstantRange));
         return *this;
     }
 
@@ -62,18 +85,7 @@ namespace nova {
 
     GraphicsPipeline GraphicsPipelineBuilder::Build()
     {
-        uint32_t pushConstantCount = static_cast<uint32_t>(m_pushConstantRanges.size());
-        uint32_t descriptorSetLayoutCount = static_cast<uint32_t>(m_descriptorSetLayouts.size());
-        VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-            .setLayoutCount = descriptorSetLayoutCount,
-            .pSetLayouts = descriptorSetLayoutCount > 0 ? m_descriptorSetLayouts.data() : nullptr,
-            .pushConstantRangeCount = pushConstantCount,
-            .pPushConstantRanges = pushConstantCount > 0 ? m_pushConstantRanges.data() : nullptr
-        };
-
-        VkPipelineLayout pipelineLayout;
-        CheckVk(vkCreatePipelineLayout(m_device.GetRaw(), &pipelineLayoutCreateInfo, nullptr, &pipelineLayout));
+        VkPipelineLayout pipelineLayout = CreatePipelineLayout(m_device, m_descriptorSetLayouts, m_pushConstantRanges);
 
         VkPipelineVertexInputStateCreateInfo vertexInputState{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -140,7 +152,7 @@ namespace nova {
         VkGraphicsPipelineCreateInfo pipelineCI{
             .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             .pNext = &renderingCI,
-            .stageCount = 2,
+            .stageCount = static_cast<uint32_t>(m_shaderStages.size()),
             .pStages = m_shaderStages.data(),
             .pVertexInputState = &vertexInputState,
             .pInputAssemblyState = &inputAssemblyState,
@@ -175,5 +187,76 @@ namespace nova {
             vkDestroyPipelineLayout(m_device->GetRaw(), m_pipelineLayout.GetRaw(), nullptr);
             m_pipelineLayout = PipelineLayout();
         }
+    }
+
+    ComputePipelineBuilder& ComputePipelineBuilder::AddPushConstantRange(const PushConstantRange& pushConstantRange)
+    {
+        m_pushConstantRanges.push_back(ToVkPushConstantRange(pushConstantRange));
+        return *this;
+    }
+
+    ComputePipelineBuilder& ComputePipelineBuilder::AddDescriptorSetLayout(const DescriptorSetLayout& descriptorSetLayout)
+    {
+        m_descriptorSetLayouts.push_back(descriptorSetLayout.GetRaw());
+        return *this;
+    }
+
+    ComputePipelineBuilder& ComputePipelineBuilder::SetShaderStage(const ShaderModule& shaderModule, const std::string& entryPoint)
+    {
+        m_entryPoint = entryPoint;
+        m_shaderModule = shaderModule.GetRaw();
+        return *this;
+    }
+
+    ComputePipeline ComputePipelineBuilder::Build() const
+    {
+        if (m_shaderModule == VK_NULL_HANDLE || m_entryPoint.empty()) {
+            throw std::invalid_argument("Compute pipeline requires a shader module and entry point.");
+        }
+        if (!m_device.GetPhysicalDevice().SupportsCompute()) {
+            throw std::runtime_error("The graphics queue does not support compute shaders.");
+        }
+
+        ComputePipeline pipeline;
+        pipeline.m_device = &m_device;
+        pipeline.m_pipelineLayout.m_bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+        pipeline.m_pipelineLayout.m_pipelineLayout = CreatePipelineLayout(m_device, m_descriptorSetLayouts, m_pushConstantRanges);
+
+        const VkComputePipelineCreateInfo createInfo{
+            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+            .stage = {
+                .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+                .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                .module = m_shaderModule,
+                .pName = m_entryPoint.c_str()
+            },
+            .layout = pipeline.m_pipelineLayout.GetRaw()
+        };
+        CheckVk(vkCreateComputePipelines(m_device.GetRaw(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline.m_pipeline));
+        return pipeline;
+    }
+
+    ComputePipeline& ComputePipeline::operator=(ComputePipeline&& other) noexcept
+    {
+        if (this != &other) {
+            Destroy();
+            m_device = std::exchange(other.m_device, nullptr);
+            m_pipelineLayout = std::exchange(other.m_pipelineLayout, PipelineLayout{});
+            m_pipeline = std::exchange(other.m_pipeline, VK_NULL_HANDLE);
+        }
+        return *this;
+    }
+
+    void ComputePipeline::Destroy()
+    {
+        if (m_pipeline != VK_NULL_HANDLE) {
+            vkDestroyPipeline(m_device->GetRaw(), m_pipeline, nullptr);
+            m_pipeline = VK_NULL_HANDLE;
+        }
+        if (m_pipelineLayout.GetRaw() != VK_NULL_HANDLE) {
+            vkDestroyPipelineLayout(m_device->GetRaw(), m_pipelineLayout.GetRaw(), nullptr);
+            m_pipelineLayout = PipelineLayout();
+        }
+        m_device = nullptr;
     }
 }

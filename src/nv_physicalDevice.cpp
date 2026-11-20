@@ -22,9 +22,18 @@ namespace nova {
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
         m_queueFamilies.resize(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, m_queueFamilies.data());
+        bool foundGraphicsQueue = false;
         for (uint32_t i = 0; i < queueFamilyCount; i++) {
-            if (m_queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            const VkQueueFlags flags = m_queueFamilies[i].queueFlags;
+            if ((flags & VK_QUEUE_GRAPHICS_BIT) == 0) {
+                continue;
+            }
+            if (!foundGraphicsQueue || (flags & VK_QUEUE_COMPUTE_BIT) != 0) {
                 m_graphicsQueueFamilyIndex = i;
+                foundGraphicsQueue = true;
+            }
+            if ((flags & VK_QUEUE_COMPUTE_BIT) != 0) {
+                m_supportsCompute = true;
                 break;
             }
         }

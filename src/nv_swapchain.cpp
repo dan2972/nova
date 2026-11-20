@@ -76,20 +76,35 @@ namespace nova {
         return *this;
     }
 
+    SwapchainBuilder& SwapchainBuilder::SetAdditionalUsage(ImageUsageFlag usage)
+    {
+        const VkImageUsageFlags requestedUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | static_cast<VkImageUsageFlags>(usage);
+        const auto surfaceCaps = m_device->GetPhysicalDevice().GetSurfaceCapabilities(*m_surface);
+        if ((requestedUsage & surfaceCaps.supportedUsageFlags) != requestedUsage) {
+            LogError("Surface does not support the requested swapchain image usage.");
+        } else {
+            m_createInfo.imageUsage = requestedUsage;
+        }
+        return *this;
+    }
+
     Swapchain SwapchainBuilder::build() {
         Swapchain swapchain;
         swapchain.m_device = m_device;
         swapchain.m_format = static_cast<ImageFormat>(m_createInfo.imageFormat);
         swapchain.m_colorSpace = static_cast<ColorSpace>(m_createInfo.imageColorSpace);
+        swapchain.m_usageFlags = static_cast<ImageUsageFlag>(m_createInfo.imageUsage);
         swapchain.m_presentMode = static_cast<SwapchainPresentMode>(m_createInfo.presentMode);
         swapchain.m_extent = {m_createInfo.imageExtent.width, m_createInfo.imageExtent.height};
         VkSwapchainKHR swapchainHandle = VK_NULL_HANDLE;
         CheckVk(vkCreateSwapchainKHR(m_device->GetRaw(), &m_createInfo, nullptr, &swapchainHandle));
         swapchain.m_swapchain = swapchainHandle;
 
-        CheckVk(vkGetSwapchainImagesKHR(m_device->GetRaw(), swapchain.m_swapchain, &m_createInfo.minImageCount, nullptr));
-        swapchain.m_images.resize(m_createInfo.minImageCount);
-        CheckVk(vkGetSwapchainImagesKHR(m_device->GetRaw(), swapchain.m_swapchain, &m_createInfo.minImageCount, swapchain.m_images.data()));
+        uint32_t imageCount = 0;
+        CheckVk(vkGetSwapchainImagesKHR(m_device->GetRaw(), swapchain.m_swapchain, &imageCount, nullptr));
+        swapchain.m_images.resize(imageCount);
+        CheckVk(vkGetSwapchainImagesKHR(m_device->GetRaw(), swapchain.m_swapchain, &imageCount, swapchain.m_images.data()));
+        swapchain.m_images.resize(imageCount);
 
         swapchain.m_imageViews.resize(swapchain.m_images.size());
         for (size_t i = 0; i < swapchain.m_images.size(); ++i) {
@@ -112,13 +127,15 @@ namespace nova {
     Image Swapchain::AcquireNextImage(uint32_t& imageIndex, bool& shouldUpdateSwapchain, const Semaphore *semaphore, const Fence *fence, uint64_t timeout) const
     {
         VkResult result = vkAcquireNextImageKHR(m_device->GetRaw(), m_swapchain, timeout, semaphore ? semaphore->GetRaw() : VK_NULL_HANDLE, fence ? fence->GetRaw() : VK_NULL_HANDLE, &imageIndex);
-        if (result != VK_SUCCESS) {
-            if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-                shouldUpdateSwapchain = true;
-            } else {
-                LogError("Failed to acquire next image from swapchain.");
-                return Image();
-            }
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            shouldUpdateSwapchain = true;
+            return {};
+        }
+        if (result == VK_SUBOPTIMAL_KHR) {
+            shouldUpdateSwapchain = true;
+        } else if (result != VK_SUCCESS) {
+            LogError("Failed to acquire next image from swapchain.");
+            return {};
         }
         Image image;
         image.m_device = m_device;
@@ -126,6 +143,7 @@ namespace nova {
         image.m_allocation.image = m_images[imageIndex];
         image.m_format = m_format;
         image.m_extent = {m_extent.width, m_extent.height, 1};
+        image.m_usageFlags = m_usageFlags;
         return image;
     }
 
@@ -159,7 +177,7 @@ namespace nova {
             image.m_allocation.image = vkImage;
             image.m_format = m_format;
             image.m_extent = {m_extent.width, m_extent.height, 1};
-            image.m_usageFlags = ImageUsageFlag::ColorAttachment;
+            image.m_usageFlags = m_usageFlags;
             image.m_mipLevels = 1;
             images.push_back(std::move(image));
         }

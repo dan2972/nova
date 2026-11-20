@@ -91,9 +91,12 @@ namespace nova {
 
         Texture CreateKTXTextureFromFile(const std::string& filePath, const CommandPool& commandPool);
 
-        BindlessTextureDescriptors CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor>& textureDescriptors) const;
+        BindlessTextureDescriptors CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor>& textureDescriptors,
+                                                                    ShaderStageFlag stageFlags = ShaderStageFlag::Fragment) const;
+        ResourceDescriptors CreateResourceDescriptors(const std::vector<ResourceDescriptor>& resourceDescriptors) const;
 
         GraphicsPipelineBuilder CreateGraphicsPipelineBuilder() const;
+        ComputePipelineBuilder CreateComputePipelineBuilder() const;
     private:
         const Instance* m_instance;
         const PhysicalDevice* m_physicalDevice;

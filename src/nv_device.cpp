@@ -282,50 +282,61 @@ namespace nova {
             return;
         }
 
-        std::vector<VkCommandBuffer> rawCommandBuffers;
-        rawCommandBuffers.reserve(submitInfo.commandBuffers.size());
+        std::vector<VkCommandBufferSubmitInfo> commandBuffers;
+        commandBuffers.reserve(submitInfo.commandBuffers.size());
         for (const auto* cmdBuffer : submitInfo.commandBuffers) {
             if (cmdBuffer && cmdBuffer->GetRaw() != VK_NULL_HANDLE) {
-                rawCommandBuffers.push_back(cmdBuffer->GetRaw());
+                commandBuffers.push_back({
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+                    .commandBuffer = cmdBuffer->GetRaw()
+                });
             } else {
                 LogError("Invalid command buffer in submission list.");
                 return;
             }
         }
 
-        std::vector<VkSemaphore> waitSemaphores;
+        std::vector<VkSemaphoreSubmitInfo> waitSemaphores;
+        waitSemaphores.reserve(submitInfo.waitSemaphores.size());
         for (const auto* semaphore : submitInfo.waitSemaphores) {
             if (semaphore && semaphore->GetRaw() != VK_NULL_HANDLE) {
-                waitSemaphores.push_back(semaphore->GetRaw());
+                waitSemaphores.push_back({
+                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                    .semaphore = semaphore->GetRaw(),
+                    .stageMask = static_cast<VkPipelineStageFlags2>(submitInfo.waitStageMask)
+                });
             } else {
                 LogError("Invalid wait semaphore in submission list.");
                 return;
             }
         }
 
-        std::vector<VkSemaphore> signalSemaphores;
+        std::vector<VkSemaphoreSubmitInfo> signalSemaphores;
+        signalSemaphores.reserve(submitInfo.signalSemaphores.size());
         for (const auto* semaphore : submitInfo.signalSemaphores) {
             if (semaphore && semaphore->GetRaw() != VK_NULL_HANDLE) {
-                signalSemaphores.push_back(semaphore->GetRaw());
+                signalSemaphores.push_back({
+                    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+                    .semaphore = semaphore->GetRaw(),
+                    .stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT
+                });
             } else {
                 LogError("Invalid signal semaphore in submission list.");
                 return;
             }
         }
 
-        VkPipelineStageFlags waitStageMask = static_cast<VkPipelineStageFlags>(submitInfo.waitStageMask);
-        VkSubmitInfo vkSubmitInfo{
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-            .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
-            .pWaitSemaphores = waitSemaphores.data(),
-            .pWaitDstStageMask = &waitStageMask,
-            .commandBufferCount = static_cast<uint32_t>(rawCommandBuffers.size()),
-            .pCommandBuffers = rawCommandBuffers.data(),
-            .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
-            .pSignalSemaphores = signalSemaphores.data()
+        VkSubmitInfo2 vkSubmitInfo{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+            .waitSemaphoreInfoCount = static_cast<uint32_t>(waitSemaphores.size()),
+            .pWaitSemaphoreInfos = waitSemaphores.data(),
+            .commandBufferInfoCount = static_cast<uint32_t>(commandBuffers.size()),
+            .pCommandBufferInfos = commandBuffers.data(),
+            .signalSemaphoreInfoCount = static_cast<uint32_t>(signalSemaphores.size()),
+            .pSignalSemaphoreInfos = signalSemaphores.data()
         };
 
-        CheckVk(vkQueueSubmit(GetGraphicsQueue().GetRaw(), 1, &vkSubmitInfo, submitInfo.fence ? submitInfo.fence->GetRaw() : VK_NULL_HANDLE));
+        CheckVk(vkQueueSubmit2(GetGraphicsQueue().GetRaw(), 1, &vkSubmitInfo, submitInfo.fence ? submitInfo.fence->GetRaw() : VK_NULL_HANDLE));
     }
 
     void Device::WaitForFence(const Fence& fence, uint64_t timeout) const
@@ -410,6 +421,7 @@ namespace nova {
             AllocationFlag::HostAccessSequentialWrite | AllocationFlag::Mapped);
 
         memcpy(stagingBuffer.GetMappedData(), ktxTexture->pData, ktxTexture->dataSize);
+        stagingBuffer.FlushMappedRange();
 
         Fence fence = CreateFence();
         CommandBuffer commandBuffer = CreateCommandBuffer(commandPool);
@@ -447,7 +459,7 @@ namespace nova {
             .oldLayout = ImageLayout::TransferDst,
             .newLayout = ImageLayout::ReadOnly,
             .src = SyncScope::TransferWrite(),
-            .dst = SyncScope::FragmentShaderRead(),
+            .dst = {PipelineStageFlag::AllCommands, AccessFlag::ShaderSampledRead},
             .range = ImageSubresourceRange::Color(ktxTexture->numLevels),
         });
 
@@ -455,8 +467,6 @@ namespace nova {
         SubmitCommandBuffer(commandBuffer, &fence);
         WaitForFence(fence);
         
-        ktxTexture_Destroy(ktxTexture);
-
         texture.m_image = std::move(img);
 
         texture.m_device = this;
@@ -472,16 +482,28 @@ namespace nova {
         texture.numLayers = ktxTexture->numLayers;
         texture.numFaces = ktxTexture->numFaces;
 
+        ktxTexture_Destroy(ktxTexture);
         return texture;
     }
 
-    BindlessTextureDescriptors Device::CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor> &textureDescriptors) const
+    BindlessTextureDescriptors Device::CreateBindlessTextureDescriptors(const std::vector<TextureDescriptor>& textureDescriptors,
+                                                                        ShaderStageFlag stageFlags) const
     {
-        return BindlessTextureDescriptors(*this, textureDescriptors);
+        return BindlessTextureDescriptors(*this, textureDescriptors, stageFlags);
+    }
+
+    ResourceDescriptors Device::CreateResourceDescriptors(const std::vector<ResourceDescriptor>& resourceDescriptors) const
+    {
+        return ResourceDescriptors(*this, resourceDescriptors);
     }
 
     GraphicsPipelineBuilder Device::CreateGraphicsPipelineBuilder() const
     {
         return GraphicsPipelineBuilder(*this);
+    }
+
+    ComputePipelineBuilder Device::CreateComputePipelineBuilder() const
+    {
+        return ComputePipelineBuilder(*this);
     }
 }
