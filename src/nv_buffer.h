@@ -65,7 +65,7 @@ namespace nova {
 
         BufferSize GetSize() const { return m_size; }
         BufferUsageFlag GetUsageFlags() const { return m_usageFlags; }
-        BufferDeviceAddress GetBufferDeviceAddress();
+        BufferDeviceAddress GetBufferDeviceAddress() const;
 
     private:
         BufferAllocation m_allocation;

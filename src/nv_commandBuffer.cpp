@@ -13,7 +13,7 @@ namespace nova {
         }
     }
 
-    VkImageMemoryBarrier2 CommandBuffer::ToVkImageMemoryBarrier(const ImageTransition& transition)
+    VkImageMemoryBarrier2 BarrierBatch::ToVkImageMemoryBarrier(const ImageTransition& transition)
     {
         return {
             .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -38,7 +38,7 @@ namespace nova {
 
     CommandBuffer& CommandBuffer::TransitionImage(const ImageTransition& transition)
     {
-        const VkImageMemoryBarrier2 barrier = ToVkImageMemoryBarrier(transition);
+        const VkImageMemoryBarrier2 barrier = BarrierBatch::ToVkImageMemoryBarrier(transition);
         const VkDependencyInfo dependency{
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
             .imageMemoryBarrierCount = 1,
@@ -50,35 +50,55 @@ namespace nova {
 
     CommandBuffer& CommandBuffer::TransitionImages(const std::vector<ImageTransition>& imageTransitions)
     {
-        std::vector<VkImageMemoryBarrier2> barriers;
-        barriers.reserve(imageTransitions.size());
-        for (const ImageTransition& transition : imageTransitions) {
-            barriers.push_back(ToVkImageMemoryBarrier(transition));
-        }
+        BarrierBatch batch;
+        batch.m_images.reserve(imageTransitions.size());
+        for (const auto& transition : imageTransitions) batch.Add(transition);
+        return PipelineBarrier(batch);
+    }
 
+    void BarrierBatch::Add(const ImageTransition& transition)
+    {
+        m_images.push_back(ToVkImageMemoryBarrier(transition));
+    }
+
+    void BarrierBatch::Add(const BufferBarrier& barrier)
+    {
+        m_buffers.push_back(ToVkBufferMemoryBarrier(barrier));
+    }
+
+    CommandBuffer& CommandBuffer::PipelineBarrier(const BarrierBatch& batch)
+    {
+        if (batch.m_images.empty() && batch.m_buffers.empty()) return *this;
         const VkDependencyInfo dependency{
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-            .imageMemoryBarrierCount = static_cast<uint32_t>(barriers.size()),
-            .pImageMemoryBarriers = barriers.data(),
+            .bufferMemoryBarrierCount = static_cast<uint32_t>(batch.m_buffers.size()),
+            .pBufferMemoryBarriers = batch.m_buffers.data(),
+            .imageMemoryBarrierCount = static_cast<uint32_t>(batch.m_images.size()),
+            .pImageMemoryBarriers = batch.m_images.data(),
         };
         vkCmdPipelineBarrier2(m_commandBuffer, &dependency);
         return *this;
     }
 
-    CommandBuffer& CommandBuffer::BarrierBuffer(const Buffer& buffer, SyncScope src, SyncScope dst, BufferSize offset, BufferSize size)
+    VkBufferMemoryBarrier2 BarrierBatch::ToVkBufferMemoryBarrier(const BufferBarrier& barrier)
     {
-        const VkBufferMemoryBarrier2 barrier{
+        return {
             .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
-            .srcStageMask = src.stage,
-            .srcAccessMask = src.access,
-            .dstStageMask = dst.stage,
-            .dstAccessMask = dst.access,
+            .srcStageMask = barrier.src.stage,
+            .srcAccessMask = barrier.src.access,
+            .dstStageMask = barrier.dst.stage,
+            .dstAccessMask = barrier.dst.access,
             .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
             .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            .buffer = buffer.GetRaw(),
-            .offset = offset,
-            .size = size
+            .buffer = barrier.buffer->GetRaw(),
+            .offset = barrier.offset,
+            .size = barrier.size
         };
+    }
+
+    CommandBuffer& CommandBuffer::BarrierBuffer(const Buffer& buffer, SyncScope src, SyncScope dst, BufferSize offset, BufferSize size)
+    {
+        const auto barrier = BarrierBatch::ToVkBufferMemoryBarrier({&buffer, src, dst, offset, size});
         const VkDependencyInfo dependency{
             .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
             .bufferMemoryBarrierCount = 1,

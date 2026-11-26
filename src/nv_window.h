@@ -8,11 +8,11 @@
 #include "nv_input.h"
 
 namespace nova {
-    using FramebufferResizeCallback = void(*)(Window* window, int width, int height);
-    using MouseMoveCallback = void(*)(Window* window, double dx, double dy);
-    using MouseWheelCallback = void(*)(Window* window, double dx, double dy);
-    using MouseButtonCallback = void(*)(Window* window, MouseButton button, ButtonAction action);
-    using KeyInputCallback = void(*)(Window* window, KeyCode key, KeyModifierFlag mods, KeyAction action);
+    using FramebufferResizeCallback = std::function<void(Window* window, int width, int height)>;
+    using MouseMoveCallback = std::function<void(Window* window, double dx, double dy)>;
+    using MouseWheelCallback = std::function<void(Window* window, double dx, double dy)>;
+    using MouseButtonCallback = std::function<void(Window* window, MouseButton button, ButtonAction action)>;
+    using KeyInputCallback = std::function<void(Window* window, KeyCode key, KeyModifierFlag mods, KeyAction action)>;
 
     class Window {
     public:

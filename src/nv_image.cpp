@@ -28,22 +28,20 @@ namespace nova {
         m_mipLevels = createInfo.mipLevels;
     }
 
+    ImageAspectFlag Image::GetAspectMask() const
+    {
+        switch (m_format) {
+            case ImageFormat::D16Unorm:
+            case ImageFormat::D32Sfloat: return ImageAspectFlag::Depth;
+            case ImageFormat::D24UnormS8Uint:
+            case ImageFormat::D32SfloatS8Uint: return ImageAspectFlag::Depth | ImageAspectFlag::Stencil;
+            default: return ImageAspectFlag::Color;
+        }
+    }
+
     ImageView Image::CreateView() const
     {
-        VkImageAspectFlags aspectMask = 0;
-        VkImageUsageFlags usageFlags = static_cast<VkImageUsageFlags>(m_usageFlags);
-        if (usageFlags & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-            aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        } else if (usageFlags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            if (m_format == ImageFormat::D32SfloatS8Uint || m_format == ImageFormat::D24UnormS8Uint) {
-                aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-            }
-        } else if (usageFlags & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT)) {
-            aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        }
-
-        return CreateView(static_cast<ImageAspectFlag>(aspectMask));
+        return CreateView(GetAspectMask());
     }
 
     ImageView Image::CreateView(ImageAspectFlag aspectMask) const

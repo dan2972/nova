@@ -76,6 +76,7 @@ namespace nova {
         VertexAttributeRead = VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT,
         IndexRead = VK_ACCESS_2_INDEX_READ_BIT,
         HostRead = VK_ACCESS_2_HOST_READ_BIT,
+        HostWrite = VK_ACCESS_2_HOST_WRITE_BIT,
         ColorAttachmentRead = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT,
         ColorAttachmentWrite = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
         DepthStencilAttachmentRead = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
@@ -121,6 +122,20 @@ namespace nova {
         static constexpr SyncScope FragmentShaderRead() {
             return SyncScope(PipelineStageFlag::FragmentShader, AccessFlag::ShaderSampledRead);
         }
+
+        constexpr bool HasWrites() const {
+            constexpr auto writes = AccessFlag::TransferWrite | AccessFlag::ShaderStorageWrite |
+                AccessFlag::ColorAttachmentWrite | AccessFlag::DepthStencilAttachmentWrite | AccessFlag::HostWrite;
+            return (access & static_cast<VkAccessFlags2>(writes)) != 0;
+        }
+
+        constexpr bool HasAccess() const { return access != VK_ACCESS_2_NONE; }
+        constexpr bool HasStage() const { return stage != VK_PIPELINE_STAGE_2_NONE; }
+
+        constexpr SyncScope operator|(SyncScope other) const {
+            return {static_cast<PipelineStageFlag>(stage | other.stage),
+                    static_cast<AccessFlag>(access | other.access)};
+        }
     
     private:
         VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
@@ -128,6 +143,7 @@ namespace nova {
 
         friend class CommandBuffer;
         friend class Device;
+        friend class BarrierBatch;
     };
 
     struct ImageSubresourceRange {
@@ -191,6 +207,26 @@ namespace nova {
                 ? SyncScope::TransferWrite()
                 : SyncScope{PipelineStageFlag::ColorAttachmentOutput, AccessFlag::ColorAttachmentWrite});
         }
+    };
+
+    struct BufferBarrier {
+        const Buffer* buffer = nullptr;
+        SyncScope src{};
+        SyncScope dst{};
+        BufferSize offset = 0;
+        BufferSize size = WholeBufferSize;
+    };
+
+    class BarrierBatch {
+    public:
+        void Add(const ImageTransition& transition);
+        void Add(const BufferBarrier& barrier);
+    private:
+        static VkImageMemoryBarrier2 ToVkImageMemoryBarrier(const ImageTransition& transition);
+        static VkBufferMemoryBarrier2 ToVkBufferMemoryBarrier(const BufferBarrier& barrier);
+        std::vector<VkImageMemoryBarrier2> m_images;
+        std::vector<VkBufferMemoryBarrier2> m_buffers;
+        friend class CommandBuffer;
     };
 
     struct BufferToImageCopyRegion {
@@ -348,6 +384,7 @@ namespace nova {
 
         CommandBuffer& TransitionImage(const ImageTransition& transition);
         CommandBuffer& TransitionImages(const std::vector<ImageTransition>& imageTransitions);
+        CommandBuffer& PipelineBarrier(const BarrierBatch& batch);
         CommandBuffer& BarrierBuffer(const Buffer& buffer, SyncScope src, SyncScope dst,
                                      BufferSize offset = 0, BufferSize size = WholeBufferSize);
         CommandBuffer& CopyBufferToImage(const Buffer& source, const Image& destination,
@@ -371,8 +408,6 @@ namespace nova {
         CommandBuffer& EndRendering();
 
     private:
-        static VkImageMemoryBarrier2 ToVkImageMemoryBarrier(const ImageTransition& transition);
-
         VkCommandBuffer m_commandBuffer = VK_NULL_HANDLE;
         const Device* m_device = nullptr;
         const CommandPool* m_commandPool = nullptr;
