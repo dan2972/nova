@@ -1,4 +1,5 @@
 #include "nv_physicalDevice.h"
+#include <stdexcept>
 
 namespace nova {
     PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
@@ -78,8 +79,7 @@ namespace nova {
     const VkSurfaceCapabilitiesKHR PhysicalDevice::GetSurfaceCapabilities(Surface surface) const
     {
         if (surface.GetRaw() == VK_NULL_HANDLE) {
-            LogError("Attempted to get surface capabilities with a null surface.");
-            exit(-1);
+            throw std::runtime_error("Attempted to get surface capabilities with a null surface.");
         }
         VkSurfaceCapabilitiesKHR capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, surface.GetRaw(), &capabilities);

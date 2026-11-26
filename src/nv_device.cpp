@@ -1,5 +1,6 @@
 
 #include <algorithm>
+#include <stdexcept>
 #include "nv_helpers.h"
 #include "nv_device.h"
 #include "nv_logger.h"
@@ -87,8 +88,7 @@ namespace nova {
         : m_instance(&instance), m_physicalDevice(&physicalDevice)
     {
         if (m_physicalDevice == nullptr) {
-            LogError("No GPU found.");
-            exit(-1);
+            throw std::runtime_error("No GPU found.");
         }
         
         const PhysicalDevice& selectedDevice = *m_physicalDevice;
@@ -99,8 +99,7 @@ namespace nova {
 
         bool success = sCreateLogicalDevice(selectedDevice, selectedDevice.GetGraphicsQueueFamilyIndex(), m_device);
         if (!success) {
-            LogError("Failed to create logical device.");
-            exit(-1);
+            throw std::runtime_error("Failed to create logical device.");
         }
     }
 

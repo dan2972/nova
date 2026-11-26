@@ -1,6 +1,7 @@
 #include "nv_window.h"
 #include "nv_helpers.h"
 #include <SDL3/SDL_vulkan.h>
+#include <stdexcept>
 
 namespace {
     uint32_t sDefaultWidth = 1280;
@@ -22,14 +23,12 @@ namespace nova {
         );
 
         if (!m_window) {
-            nova::LogError("Failed to create GLFW window");
-            exit(-1);
+            throw std::runtime_error("Failed to create GLFW window");
         }
         
         bool res = SDL_Vulkan_CreateSurface(m_window, m_instance->GetRaw(), nullptr, &m_surface.m_surface);
         if (!res) {
-            nova::LogError("Failed to create Vulkan surface");
-            exit(-1);
+            throw std::runtime_error("Failed to create Vulkan surface");
         }
     }
 
@@ -139,8 +138,7 @@ namespace nova {
     {
         int width, height;
         if (!SDL_GetWindowSizeInPixels(m_window, &width, &height)) {
-            nova::LogError("Failed to get window size in pixels");
-            exit(-1);
+            throw std::runtime_error("Failed to get window size in pixels");
         }
         return Extent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
     }
@@ -149,8 +147,7 @@ namespace nova {
     {
         int width, height;
         if (!SDL_GetWindowSize(m_window, &width, &height)) {
-            nova::LogError("Failed to get window size");
-            exit(-1);
+            throw std::runtime_error("Failed to get window size");
         }
         return Extent2D{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
     }

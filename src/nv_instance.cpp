@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#include <stdexcept>
 
 namespace {
     static bool sNovaInitialized = false;
@@ -248,8 +249,7 @@ namespace nova {
     {
         if (!sNovaInitialized) {
             if (!sInitializeNova()) {
-                LogError("Failed to initialize nova.");
-                exit(-1);
+                throw std::runtime_error("Failed to initialize nova.");
             }
         }
         sCreateInstance(&m_instance, applicationName);
@@ -264,8 +264,7 @@ namespace nova {
         uint32_t deviceCount = 0;
         CheckVk(vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr));
         if (deviceCount == 0) {
-            LogError("Failed to find GPUs with Vulkan support.");
-            exit(-1);
+            throw std::runtime_error("Failed to find GPUs with Vulkan support.");
         }
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
